@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Inventory Ledger{% endblock %}
+
+{% block content %}
+<nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+    <div class="text-xl font-bold text-gray-900">Bonbonbites Dashboard</div>
+    <div class="flex items-center space-x-4">
+        <span class="text-sm text-gray-600 font-medium">Halo, {{ user.username }} ({{ user.role.value }})</span>
+        <a href="{{ url_for('auth.logout') }}" class="text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-md transition-colors">
+            Logout
+        </a>
+    </div>
+</nav>
+
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h1 class="text-2xl font-bold text-gray-900">Selamat Datang di Core Ledger System 🚀</h1>
+        <p class="text-gray-600 mt-2">Aplikasi inventory berbasis pencatatan mutasi ganda (ledger-style) berhasil diinisialisasi.</p>
+    </div>
+</div>
+{% endblock %}

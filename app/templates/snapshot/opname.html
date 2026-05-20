@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6 text-slate-800">Form Opname Harian</h1>
+    
+    <form action="{{ url_for('snapshot.opname') }}" method="POST" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600 text-sm uppercase tracking-wider">
+                        <th class="p-3 border-b">Nama Item</th>
+                        <th class="p-3 border-b text-center">Stok Sistem</th>
+                        <th class="p-3 border-b text-center w-32">Stok Fisik</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-3 font-medium">{{ item.name }}</td>
+                        <td class="p-3 text-center text-slate-500">{{ item.current_stock }}</td>
+                        <td class="p-3 text-center">
+                            <input type="number" 
+                                   name="stock_{{ item.id }}" 
+                                   value="{{ item.current_stock }}" 
+                                   class="w-20 p-2 border border-slate-300 rounded text-center focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                   min="0">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-6 flex justify-end">
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
+                Simpan Opname
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user # Pastikan current_user diimpor
+from flask_login import login_required, current_user
 from app.snapshot import snapshot_bp
 from app.models import MasterItem, StockSnapshot
 from app import db
@@ -9,43 +9,61 @@ from datetime import datetime
 @login_required
 def opname():
     if request.method == 'POST':
-        # Proses menyimpan data dari form
-        for key, value in request.form.items():
-            if key.startswith('stock_'):
-                item_id = key.split('_')[1]
-                actual_qty = int(value)
-                
-                # Perbaikan 1: Gunakan 'snapshot_at' bukan 'snapshot_date'
-                # Perbaikan 2: Wajib mengisi 'created_by' dari current_user.id
-                new_snapshot = StockSnapshot(
-                    item_id=item_id, 
-                    actual_qty=actual_qty, 
-                    snapshot_at=datetime.utcnow(), 
-                    created_by=current_user.id
-                )
-                db.session.add(new_snapshot)
-                
-                # Update juga current_stock di MasterItem
-                item = MasterItem.query.get(item_id)
-                if item:
-                    item.current_stock = actual_qty
+        items = MasterItem.query.filter_by(deleted_at=None).all()
+        has_updates = False
         
-        db.session.commit()
-        flash('Data opname berhasil disimpan!', 'success')
-        return redirect(url_for('snapshot.opname'))
+        for item in items:
+            input_val = request.form.get(f'stock_{item.id}')
+            if input_val and input_val.strip() != '':
+                try:
+                    actual_qty = int(input_val)
+                    if actual_qty != item.current_stock:
+                        new_snapshot = StockSnapshot(
+                            item_id=item.id,
+                            actual_qty=actual_qty,
+                            created_by=current_user.id
+                        )
+                        db.session.add(new_snapshot)
+                        item.current_stock = actual_qty
+                        has_updates = True
+                except ValueError:
+                    continue
+        
+        if has_updates:
+            db.session.commit()
+            flash('Proses Stock Opname berhasil disimpan ke database!', 'success')
+        else:
+            flash('Tidak ada perubahan stok yang dicatat.', 'info')
+            
+        return redirect(url_for('snapshot.history'))
 
-    # Perbaikan 3: Filter item yang deleted_at nya NULL (belum dihapus)
-    items = MasterItem.query.filter(MasterItem.deleted_at == None).all()
-    
+    items = MasterItem.query.filter_by(deleted_at=None).all()
     return render_template('snapshot/opname.html', items=items)
-
 
 @snapshot_bp.route('/history')
 @login_required
 def history():
-    # Mengambil semua data opname, diurutkan dari yang terbaru ke terlama
-    # Karena di models.py Anda sudah membuat backref='item' dan backref='author',
-    # kita bisa langsung memanggil relasinya di HTML nanti.
-    snapshots = StockSnapshot.query.order_by(StockSnapshot.snapshot_at.desc()).all()
-    
-    return render_template('snapshot/history.html', snapshots=snapshots)
+    # Menangkap filter dari URL (GET Request)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    query = StockSnapshot.query
+
+    # Jika ada input tanggal mulai
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(StockSnapshot.snapshot_at >= start_dt)
+        except ValueError:
+            pass
+
+    # Jika ada input tanggal akhir (dibuat hingga pukul 23:59:59)
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            query = query.filter(StockSnapshot.snapshot_at <= end_dt)
+        except ValueError:
+            pass
+
+    snapshots = query.order_by(StockSnapshot.snapshot_at.desc()).all()
+    return render_template('snapshot/history.html', snapshots=snapshots, start_date=start_date, end_date=end_date)

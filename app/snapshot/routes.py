@@ -38,3 +38,14 @@ def opname():
     items = MasterItem.query.filter(MasterItem.deleted_at == None).all()
     
     return render_template('snapshot/opname.html', items=items)
+
+
+@snapshot_bp.route('/history')
+@login_required
+def history():
+    # Mengambil semua data opname, diurutkan dari yang terbaru ke terlama
+    # Karena di models.py Anda sudah membuat backref='item' dan backref='author',
+    # kita bisa langsung memanggil relasinya di HTML nanti.
+    snapshots = StockSnapshot.query.order_by(StockSnapshot.snapshot_at.desc()).all()
+    
+    return render_template('snapshot/history.html', snapshots=snapshots)

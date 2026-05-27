@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Riwayat Opname - Bonbonbites{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-slate-800">Riwayat Stock Opname</h1>
+        <a href="{{ url_for('snapshot.opname') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition shadow">
+            + Lakukan Opname Baru
+        </a>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                        <th class="p-4 border-b">Waktu Pencatatan</th>
+                        <th class="p-4 border-b">Kode SKU</th>
+                        <th class="p-4 border-b">Nama Barang</th>
+                        <th class="p-4 border-b text-center">Stok Fisik (Hasil)</th>
+                        <th class="p-4 border-b text-center">Diperiksa Oleh</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-slate-200">
+                    {% if not snapshots %}
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-slate-400">
+                            Belum ada riwayat stock opname yang tercatat di sistem.
+                        </td>
+                    </tr>
+                    {% endif %}
+                    
+                    {% for snap in snapshots %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 text-slate-600 font-medium">{{ snap.snapshot_at.strftime('%d %b %Y, %H:%M') }}</td>
+                        
+                        <td class="p-4 font-mono text-indigo-600 text-xs font-bold">{{ snap.item.item_code }}</td>
+                        <td class="p-4 text-slate-800 font-medium">{{ snap.item.name }}</td>
+                        
+                        <td class="p-4 text-center font-bold text-emerald-600">{{ snap.actual_qty }} {{ snap.item.unit }}</td>
+                        
+                        <td class="p-4 text-center">
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-semibold">
+                                {{ snap.author.username }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

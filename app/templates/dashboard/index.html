@@ -1,22 +1,74 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Inventory Ledger{% endblock %}
+{% block title %}Dashboard - Bonbonbites Inventory{% endblock %}
 
 {% block content %}
-<nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-    <div class="text-xl font-bold text-gray-900">Bonbonbites Dashboard</div>
+<nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center mb-6 rounded-lg">
+    <div class="text-xl font-bold text-slate-800">Ringkasan Sistem</div>
     <div class="flex items-center space-x-4">
-        <span class="text-sm text-gray-600 font-medium">Halo, {{ user.username }} ({{ user.role.value }})</span>
-        <a href="{{ url_for('auth.logout') }}" class="text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-md transition-colors">
-            Logout
-        </a>
+        <span class="text-sm text-slate-600 font-medium">Halo, {{ user.username }} ({{ user.role }})</span>
     </div>
 </nav>
 
-<div class="p-6 max-w-7xl mx-auto space-y-6">
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h1 class="text-2xl font-bold text-gray-900">Selamat Datang di Core Ledger System 🚀</h1>
-        <p class="text-gray-600 mt-2">Aplikasi inventory berbasis pencatatan mutasi ganda (ledger-style) berhasil diinisialisasi.</p>
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-indigo-500">
+            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Katalog Item Aktif</p>
+            <div class="flex items-end justify-between">
+                <h2 class="text-3xl font-bold text-slate-800">{{ total_items }}</h2>
+                <span class="text-indigo-500 text-sm font-semibold">SKU Terdaftar</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500">
+            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Peringatan Stok Rendah</p>
+            <div class="flex items-end justify-between">
+                <h2 class="text-3xl font-bold text-rose-600">{{ low_stock_items }}</h2>
+                <span class="text-rose-500 text-sm font-semibold">Butuh Restock</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Total Histori Opname</p>
+            <div class="flex items-end justify-between">
+                <h2 class="text-3xl font-bold text-emerald-600">{{ total_opname }}</h2>
+                <span class="text-emerald-500 text-sm font-semibold">Pencatatan Fisik</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+            <h3 class="font-bold text-slate-800">Top 5 Stok Kritis (Mendesak)</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white text-slate-500 text-xs uppercase tracking-wider">
+                        <th class="p-4 border-b">Nama Barang</th>
+                        <th class="p-4 border-b text-center">Batas Aman (ROP)</th>
+                        <th class="p-4 border-b text-center">Sisa Stok Fisik</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    {% if not critical_items %}
+                    <tr>
+                        <td colspan="3" class="p-6 text-center text-slate-400 font-medium">Luar biasa! Tidak ada barang yang stoknya kritis.</td>
+                    </tr>
+                    {% endif %}
+                    {% for item in critical_items %}
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-medium text-slate-700">
+                            {{ item.name }} 
+                            <span class="text-[10px] ml-2 px-2 py-0.5 bg-slate-100 rounded text-slate-500">{{ item.item_code }}</span>
+                        </td>
+                        <td class="p-4 text-center text-slate-500">{{ item.reorder_point }} {{ item.unit }}</td>
+                        <td class="p-4 text-center font-bold text-rose-600">{{ item.current_stock }} {{ item.unit }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

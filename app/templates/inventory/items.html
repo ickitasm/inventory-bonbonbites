@@ -4,9 +4,11 @@
 <div class="container mx-auto px-4 py-6">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Master Item (Katalog Barang)</h1>
+        {% if current_user.role != 'MANAGER' %}
         <button onclick="toggleModal('modal-add')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm shadow">
             + Tambah Barang Baru
         </button>
+        {% endif %}
     </div>
 
     <div class="bg-white shadow rounded-lg overflow-hidden">
@@ -19,7 +21,9 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Satuan</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Min. Stok (ROP)</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Stok Saat Ini</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">Aksi</th>
+                        {% if current_user.role != 'MANAGER' %}
+                        <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">Aksi</th>
+                        {% endif %}
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 bg-white text-sm text-slate-700">
@@ -38,12 +42,14 @@
                     <td class="px-6 py-4 font-bold {% if item.current_stock <= item.reorder_point %}text-amber-600{% else %}text-emerald-600{% endif %}">
                         {{ item.current_stock }}
                     </td>
+                    {% if current_user.role != 'MANAGER' %}
                     <td class="px-6 py-4 text-center flex justify-center space-x-2">
                         <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.category }}', '{{ item.unit }}', '{{ item.reorder_point }}')" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</button>
                         <form action="{{ url_for('inventory.delete_item', id=item.id) }}" method="POST" onsubmit="return confirm('Hapus barang ini dari katalog?');" class="inline">
                             <button type="submit" class="text-rose-600 hover:text-rose-900 font-medium">Hapus</button>
                         </form>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>

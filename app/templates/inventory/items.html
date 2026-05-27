@@ -4,11 +4,9 @@
 <div class="container mx-auto px-4 py-6">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Master Item (Katalog Barang)</h1>
-        {% if current_user.role != 'MANAGER' %}
         <button onclick="toggleModal('modal-add')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm shadow">
             + Tambah Barang Baru
         </button>
-        {% endif %}
     </div>
 
     <div class="bg-white shadow rounded-lg overflow-hidden">
@@ -18,38 +16,39 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Kode SKU</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nama Barang</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Kategori</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Satuan</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Lokasi</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Supplier Utama</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Min. Stok (ROP)</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Stok Saat Ini</th>
-                        {% if current_user.role != 'MANAGER' %}
-                        <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">Aksi</th>
-                        {% endif %}
+                    <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 bg-white text-sm text-slate-700">
                 {% if not items %}
                 <tr>
-                    <td colspan="7" class="px-6 py-10 text-center text-slate-400">Belum ada data barang. Silakan tambah barang baru.</td>
+                    <td colspan="8" class="px-6 py-10 text-center text-slate-400">Belum ada data barang. Silakan tambah barang baru.</td>
                 </tr>
                 {% endif %}
                 {% for item in items %}
                 <tr>
                     <td class="px-6 py-4 font-mono font-bold text-indigo-600">{{ item.item_code }}</td>
-                    <td class="px-6 py-4 font-medium">{{ item.name }}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-semibold">{{ item.category }}</span></td>
-                    <td class="px-6 py-4">{{ item.unit }}</td>
-                    <td class="px-6 py-4 text-center">{{ item.reorder_point }}</td>
-                    <td class="px-6 py-4 font-bold {% if item.current_stock <= item.reorder_point %}text-amber-600{% else %}text-emerald-600{% endif %}">
-                        {{ item.current_stock }}
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-slate-900">{{ item.name }}</div>
+                        <div class="text-xs text-slate-400 italic">{{ item.notes or '' }}</div>
                     </td>
-                    {% if current_user.role != 'MANAGER' %}
-                    <td class="px-6 py-4 text-center flex justify-center space-x-2">
-                        <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.category }}', '{{ item.unit }}', '{{ item.reorder_point }}')" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</button>
+                    <td class="px-6 py-4"><span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-semibold">{{ item.category_rel.name if item.category_rel else '-' }}</span></td>
+                    <td class="px-6 py-4 text-slate-500">{{ item.location_rel.name if item.location_rel else '-' }}</td>
+                    <td class="px-6 py-4 text-slate-500 font-medium">{{ item.primary_supplier.name if item.primary_supplier else '-' }}</td>
+                    <td class="px-6 py-4 text-center text-slate-500">{{ item.reorder_point }} {{ item.unit }}</td>
+                    <td class="px-6 py-4 font-bold {% if item.current_stock <= item.reorder_point %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                        {{ item.current_stock }} {{ item.unit }}
+                    </td>
+                    <td class="px-6 py-4 text-center flex justify-center space-x-2 mt-1">
+                        <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.category_id or \'\' }}', '{{ item.location_id or \'\' }}', '{{ item.supplier_id or \'\' }}', '{{ item.unit }}', '{{ item.reorder_point }}', '{{ item.notes or \'\' }}')" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</button>
                         <form action="{{ url_for('inventory.delete_item', id=item.id) }}" method="POST" onsubmit="return confirm('Hapus barang ini dari katalog?');" class="inline">
                             <button type="submit" class="text-rose-600 hover:text-rose-900 font-medium">Hapus</button>
                         </form>
                     </td>
-                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -57,20 +56,43 @@
     </div>
 </div>
 
-<div id="modal-add" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+<div id="modal-add" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Tambah Barang Baru</h3>
         <form action="{{ url_for('inventory.create_item') }}" method="POST" class="space-y-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Barang</label>
                 <input type="text" name="name" required placeholder="Contoh: Diamond Susu UHT Plain" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
+            
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori</label>
-                    <select name="category" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                    <select name="category_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                        <option value="">-- Pilih Kategori --</option>
                         {% for cat in categories %}
-                        <option value="{{ cat }}">{{ cat }}</option>
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lokasi Penyimpanan</label>
+                    <select name="location_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                        <option value="">-- Pilih Lokasi --</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}">{{ loc.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supplier Utama</label>
+                    <select name="supplier_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                        <option value="">-- Pilih Supplier --</option>
+                        {% for sup in suppliers %}
+                        <option value="{{ sup.id }}">{{ sup.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -83,10 +105,17 @@
                     </select>
                 </div>
             </div>
+
             <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Batas Minimum Stok (Reorder Point)</label>
                 <input type="number" name="reorder_point" value="0" min="0" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Catatan Barang</label>
+                <textarea name="notes" placeholder="Keterangan tambahan barang..." class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600 h-20"></textarea>
+            </div>
+
             <div class="flex justify-end space-x-2 pt-2">
                 <button type="button" onclick="toggleModal('modal-add')" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">Batal</button>
                 <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm shadow">Simpan Barang</button>
@@ -95,20 +124,43 @@
     </div>
 </div>
 
-<div id="modal-edit" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+<div id="modal-edit" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Edit Data Barang</h3>
         <form id="form-edit" action="" method="POST" class="space-y-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Barang</label>
                 <input type="text" id="edit-name" name="name" required class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori</label>
-                    <select id="edit-category" name="category" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                    <select id="edit-category" name="category_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                        <option value="">-- Pilih Kategori --</option>
                         {% for cat in categories %}
-                        <option value="{{ cat }}">{{ cat }}</option>
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lokasi Penyimpanan</label>
+                    <select id="edit-location" name="location_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                        <option value="">-- Pilih Lokasi --</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}">{{ loc.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supplier Utama</label>
+                    <select id="edit-supplier" name="supplier_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                        <option value="">-- Pilih Supplier --</option>
+                        {% for sup in suppliers %}
+                        <option value="{{ sup.id }}">{{ sup.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -121,10 +173,17 @@
                     </select>
                 </div>
             </div>
+
             <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Batas Minimum Stok (Reorder Point)</label>
                 <input type="number" id="edit-rop" name="reorder_point" min="0" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Catatan Barang</label>
+                <textarea id="edit-notes" name="notes" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600 h-20"></textarea>
+            </div>
+
             <div class="flex justify-end space-x-2 pt-2">
                 <button type="button" onclick="toggleModal('modal-edit')" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">Batal</button>
                 <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm shadow">Simpan Perubahan</button>
@@ -139,13 +198,15 @@
         modal.classList.toggle('hidden');
     }
 
-    function openEditModal(id, name, category, unit, rop) {
-        // Tembakkan data ke form edit
+    function openEditModal(id, name, cat_id, loc_id, sup_id, unit, rop, notes) {
         document.getElementById('form-edit').action = `/inventory/items/update/${id}`;
         document.getElementById('edit-name').value = name;
-        document.getElementById('edit-category').value = category;
+        document.getElementById('edit-category').value = cat_id;
+        document.getElementById('edit-location').value = loc_id;
+        document.getElementById('edit-supplier').value = sup_id;
         document.getElementById('edit-unit').value = unit;
         document.getElementById('edit-rop').value = rop;
+        document.getElementById('edit-notes').value = notes;
         toggleModal('modal-edit');
     }
 </script>

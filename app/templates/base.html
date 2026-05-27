@@ -58,16 +58,18 @@
                     <span class="text-sm font-medium">Katalog Master Item</span>
                 </a>
 
-                {% if current_user.role != 'MANAGER' %}
                 <a href="{{ url_for('snapshot.opname') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">📋</span>
                     <span class="text-sm font-medium">Input Stock Opname</span>
                 </a>
-                {% endif %}
                 
                 <a href="{{ url_for('snapshot.history') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">🕰️</span>
                     <span class="text-sm font-medium">Riwayat Opname</span>
+                </a>
+                <a href="{{ url_for('inventory.settings') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+                    <span class="text-lg">🏷️</span>
+                    <span class="text-sm font-medium">Data Pendukung</span>
                 </a>
             </nav>
 
@@ -88,13 +90,7 @@
         {% endif %}
 
         <div class="flex-1 flex flex-col {% if not current_user.is_authenticated %}bg-slate-100 items-center justify-center p-4{% else %}bg-slate-50{% endif %}">
-            
-            {% if current_user.is_authenticated %}
-            <header class="bg-white border-b border-slate-200 py-3 px-6 text-right text-xs text-slate-400">
-                Sistem Terkunci Periode Aktif: Mei 2026
-            </header>
-            {% endif %}
-            
+                    
             <main class="{% if current_user.is_authenticated %}p-6 flex-grow{% else %}w-full max-w-md{% endif %}">
                 {% block content %}{% endblock %}
             </main>

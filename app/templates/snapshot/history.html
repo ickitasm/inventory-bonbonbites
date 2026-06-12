@@ -3,67 +3,120 @@
 {% block title %}Riwayat Opname - Bonbonbites{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-slate-800">Riwayat Stock Opname</h1>
-        <a href="{{ url_for('snapshot.opname') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition shadow">
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Riwayat Sesi Stock Opname</h1>
+            <p class="text-sm text-slate-500">Gunakan filter untuk mengaudit laporan diskrepansi selisih stok sistem harian.</p>
+        </div>
+        <a href="{{ url_for('snapshot.opname') }}" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow">
             + Lakukan Opname Baru
         </a>
     </div>
 
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
-        <form action="{{ url_for('snapshot.history') }}" method="GET" class="flex flex-wrap items-end gap-4">
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex flex-wrap gap-2 border-b border-slate-100 pb-3">
+            <a href="{{ url_for('snapshot.history', filter_type='today') }}" class="px-4 py-1.5 rounded-full text-xs font-bold transition {% if filter_type == 'today' %}bg-indigo-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">Hari Ini</a>
+            <a href="{{ url_for('snapshot.history', filter_type='week') }}" class="px-4 py-1.5 rounded-full text-xs font-bold transition {% if filter_type == 'week' %}bg-indigo-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">7 Hari Terakhir</a>
+            <a href="{{ url_for('snapshot.history', filter_type='month') }}" class="px-4 py-1.5 rounded-full text-xs font-bold transition {% if filter_type == 'month' %}bg-indigo-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">Bulan Ini</a>
+            <a href="{{ url_for('snapshot.history', filter_type='custom') }}" class="px-4 py-1.5 rounded-full text-xs font-bold transition {% if filter_type == 'custom' %}bg-indigo-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">Custom Tanggal</a>
+        </div>
+
+        {% if filter_type == 'custom' %}
+        <form action="{{ url_for('snapshot.history') }}" method="GET" class="flex flex-wrap items-end gap-3 animation-fade-in">
+            <input type="hidden" name="filter_type" value="custom">
             <div>
-                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Dari Tanggal</label>
-                <input type="date" name="start_date" value="{{ start_date or '' }}" class="border rounded-lg p-2 text-sm focus:outline-indigo-600 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dari Tanggal</label>
+                <input type="date" name="start_date" value="{{ start_date or '' }}" class="border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Sampai Tanggal</label>
-                <input type="date" name="end_date" value="{{ end_date or '' }}" class="border rounded-lg p-2 text-sm focus:outline-indigo-600 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sampai Tanggal</label>
+                <input type="date" name="end_date" value="{{ end_date or '' }}" class="border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
-            <div class="flex gap-2">
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition shadow-sm">Cari Data</button>
-                <a href="{{ url_for('snapshot.history') }}" class="bg-slate-100 text-slate-600 border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition">Reset</a>
-            </div>
+            <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-900 transition">Cari</button>
         </form>
+        {% endif %}
     </div>
     
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                        <th class="p-4 border-b">Waktu Pencatatan</th>
-                        <th class="p-4 border-b">Kode SKU</th>
-                        <th class="p-4 border-b">Nama Barang</th>
-                        <th class="p-4 border-b text-center">Stok Fisik (Hasil)</th>
-                        <th class="p-4 border-b text-center">Diperiksa Oleh</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm divide-y divide-slate-200">
-                    {% if not snapshots %}
-                    <tr>
-                        <td colspan="5" class="p-8 text-center text-slate-400 font-medium">
-                            Tidak ada riwayat opname yang ditemukan pada rentang tanggal tersebut.
-                        </td>
-                    </tr>
-                    {% endif %}
-                    {% for snap in snapshots %}
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 text-slate-600 font-medium">{{ snap.snapshot_at.strftime('%d %b %Y, %H:%M') }}</td>
-                        <td class="p-4 font-mono text-indigo-600 text-xs font-bold">{{ snap.item.item_code }}</td>
-                        <td class="p-4 text-slate-800 font-medium">{{ snap.item.name }}</td>
-                        <td class="p-4 text-center font-bold text-emerald-600">{{ snap.actual_qty }} {{ snap.item.unit }}</td>
-                        <td class="p-4 text-center">
-                            <span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-semibold">
-                                {{ snap.author.username }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    {% if not grouped_history %}
+    <div class="bg-white rounded-xl p-10 border border-slate-200 text-center text-slate-400 font-medium">
+        Tidak ada riwayat opname ditemukan pada jangka waktu filter ini.
     </div>
+    {% endif %}
+
+    {% for year, months in grouped_history.items() %}
+    <div class="space-y-4">
+        <h2 class="text-lg font-extrabold text-slate-700 tracking-wide border-l-4 border-indigo-600 pl-3 mt-4">Tahun {{ year }}</h2>
+        
+        {% for month, sessions in months.items() %}
+        <details open class="group bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-300">
+            <summary class="flex justify-between items-center p-4 bg-slate-50 font-bold text-slate-800 cursor-pointer list-none select-none hover:bg-slate-100">
+                <div class="flex items-center space-x-2">
+                    <span class="text-indigo-600 group-open:rotate-90 transition-transform duration-200">📁</span>
+                    <span>Bulan {{ month }}</span>
+                    <span class="ml-2 bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-extrabold">{{ sessions|length }} Sesi</span>
+                </div>
+                <span class="text-slate-400 text-xs group-open:hidden">Klik untuk melihat rincian</span>
+                <span class="text-slate-400 text-xs hidden group-open:block">Klik untuk melipat</span>
+            </summary>
+            
+            <div class="p-4 space-y-6 divide-y divide-slate-100 bg-white">
+                {% for session in sessions %}
+                <div class="pt-4 first:pt-0 space-y-3">
+                    <div class="flex justify-between items-start bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <div>
+                            <span class="text-xs font-mono font-bold bg-indigo-600 text-white px-2 py-0.5 rounded">{{ session.session_code }}</span>
+                            <span class="ml-2 text-xs font-semibold text-slate-600">Pemeriksa: <strong class="text-slate-900">{{ session.author.username }}</strong></span>
+                            <p class="text-xs text-slate-500 italic mt-1">Notes: "{{ session.notes or '-' }}"</p>
+                        </div>
+                        <div class="text-right text-xs text-slate-500 font-medium">
+                            ⏳ {{ session.session_datetime.strftime('%d %b %Y, %H:%M') }} WIB
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="text-slate-400 uppercase font-bold border-b border-slate-100">
+                                    <th class="pb-2">Barang Item</th>
+                                    <th class="pb-2 text-center">Stok Sistem (Awal)</th>
+                                    <th class="pb-2 text-center">Hitung Fisik</th>
+                                    <th class="pb-2 text-center">Selisih Kuantitas (Variance)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                                {% for snap in session.snapshots %}
+                                <tr>
+                                    <td class="py-2 font-bold text-slate-800">
+                                        {{ snap.item.item_name }} 
+                                        <span class="text-[10px] text-slate-400 font-mono">({{ snap.item.item_code }})</span>
+
+                                        {% if snap.item.deleted_at %}
+                                        <span class="ml-1 px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[9px] uppercase font-bold rounded">Nonaktif</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2 text-center text-slate-500">{{ snap.system_qty_before }} {{ snap.item.unit }}</td>
+                                    <td class="py-2 text-center font-bold text-slate-900">{{ snap.physical_qty }} {{ snap.item.unit }}</td>
+                                    <td class="py-2 text-center">
+                                        {% if snap.variance_qty == 0 %}
+                                            <span class="text-slate-500 font-bold">Pas (0)</span>
+                                        {% elif snap.variance_qty > 0 %}
+                                            <span class="text-emerald-600 font-bold">Surplus (+{{ snap.variance_qty }})</span>
+                                        {% else %}
+                                            <span class="text-rose-600 font-bold">Defisit ({{ snap.variance_qty }})</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </details>
+        {% endfor %}
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

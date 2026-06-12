@@ -3,8 +3,10 @@
 {% block content %}
 <div class="max-w-7xl mx-auto space-y-6">
     <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold text-slate-800">Data Pendukung Inventori</h1>
-        <p class="text-sm text-slate-500">Kelola Kategori, Lokasi Penyimpanan, dan Daftar Supplier Utama.</p>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Data Pendukung Inventori</h1>
+            <p class="text-sm text-slate-500">Kelola Kategori, Lokasi Penyimpanan, dan Daftar Supplier Utama.</p>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -15,16 +17,24 @@
                 <form action="{{ url_for('inventory.settings') }}" method="POST" class="flex gap-2 mb-4">
                     <input type="hidden" name="action" value="add_category">
                     <input type="text" name="name" placeholder="Misal: PREMIX" required class="w-full border rounded p-2 text-sm focus:outline-indigo-600">
-                    <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded text-sm hover:bg-indigo-700">+</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-indigo-700">+</button>
                 </form>
                 <ul class="divide-y divide-slate-100 text-sm">
                     {% for cat in categories %}
-                    <li class="py-2 flex justify-between items-center text-slate-600">
-                        <span class="font-medium">{{ cat.name }}</span>
-                        <button onclick="confirmDelete('delete_category', '{{ cat.id }}', '{{ cat.name }}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2">Hapus</button>
+                    <li class="py-2 flex justify-between items-center">
+                        <span class="font-medium {% if not cat.is_active %}text-slate-400 line-through{% else %}text-slate-700{% endif %}">
+                            {{ cat.category_name }}
+                        </span>
+                        {% if cat.is_active %}
+                        <button onclick="confirmDisable('delete_category', '{{ cat.id }}', '{{ cat.category_name }}')" class="text-xs text-amber-600 hover:text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-bold transition">Nonaktifkan</button>
+                        {% else %}
+                        <form action="{{ url_for('inventory.settings') }}" method="POST" class="inline">
+                            <input type="hidden" name="action" value="restore_category">
+                            <input type="hidden" name="id" value="{{ cat.id }}">
+                            <button type="submit" class="text-xs text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-bold transition">Aktifkan</button>
+                        </form>
+                        {% endif %}
                     </li>
-                    {% else %}
-                    <li class="py-2 text-slate-400 italic text-center">Belum ada kategori</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -35,17 +45,25 @@
             <div class="p-4">
                 <form action="{{ url_for('inventory.settings') }}" method="POST" class="flex gap-2 mb-4">
                     <input type="hidden" name="action" value="add_location">
-                    <input type="text" name="name" placeholder="Misal: LNT1" required class="w-full border rounded p-2 text-sm focus:outline-indigo-600">
-                    <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded text-sm hover:bg-indigo-700">+</button>
+                    <input type="text" name="name" placeholder="Misal: LT1-RACK-A1" required class="w-full border rounded p-2 text-sm focus:outline-indigo-600">
+                    <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-indigo-700">+</button>
                 </form>
                 <ul class="divide-y divide-slate-100 text-sm">
                     {% for loc in locations %}
-                    <li class="py-2 flex justify-between items-center text-slate-600">
-                        <span class="font-medium">{{ loc.name }}</span>
-                        <button onclick="confirmDelete('delete_location', '{{ loc.id }}', '{{ loc.name }}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2">Hapus</button>
+                    <li class="py-2 flex justify-between items-center">
+                        <span class="font-medium font-mono text-xs {% if not loc.is_active %}text-slate-400 line-through{% else %}text-slate-700{% endif %}">
+                            {{ loc.location_code }}
+                        </span>
+                        {% if loc.is_active %}
+                        <button onclick="confirmDisable('delete_location', '{{ loc.id }}', '{{ loc.location_code }}')" class="text-xs text-amber-600 hover:text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-bold transition">Nonaktifkan</button>
+                        {% else %}
+                        <form action="{{ url_for('inventory.settings') }}" method="POST" class="inline">
+                            <input type="hidden" name="action" value="restore_location">
+                            <input type="hidden" name="id" value="{{ loc.id }}">
+                            <button type="submit" class="text-xs text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-bold transition">Aktifkan</button>
+                        </form>
+                        {% endif %}
                     </li>
-                    {% else %}
-                    <li class="py-2 text-slate-400 italic text-center">Belum ada lokasi</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -58,21 +76,27 @@
                     <input type="hidden" name="action" value="add_supplier">
                     <input type="text" name="name" placeholder="Nama Toko/Vendor" required class="w-full border rounded p-2 text-sm focus:outline-indigo-600">
                     <div class="flex gap-2">
-                        <input type="text" name="contact_info" placeholder="Kontak / Link" class="w-full border rounded p-2 text-sm focus:outline-indigo-600">
-                        <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded text-sm hover:bg-indigo-700">+</button>
+                        <input type="text" name="contact_info" placeholder="Kontak / WhatsApp" class="w-full border rounded p-2 text-sm focus:outline-indigo-600">
+                        <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-indigo-700">+</button>
                     </div>
                 </form>
                 <ul class="divide-y divide-slate-100 text-sm">
                     {% for sup in suppliers %}
-                    <li class="py-2 flex justify-between items-center text-slate-600">
+                    <li class="py-2 flex justify-between items-center">
                         <div class="flex flex-col">
-                            <span class="font-bold text-slate-800">{{ sup.name }}</span>
-                            <span class="text-[10px] text-slate-500">{{ sup.contact_info or '-' }}</span>
+                            <span class="font-bold {% if not sup.is_active %}text-slate-400 line-through{% else %}text-slate-800{% endif %}">{{ sup.supplier_name }}</span>
+                            <span class="text-[10px] text-slate-400">{{ sup.contact or '-' }}</span>
                         </div>
-                        <button onclick="confirmDelete('delete_supplier', '{{ sup.id }}', '{{ sup.name }}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2">Hapus</button>
+                        {% if sup.is_active %}
+                        <button onclick="confirmDisable('delete_supplier', '{{ sup.id }}', '{{ sup.supplier_name }}')" class="text-xs text-amber-600 hover:text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-bold transition">Nonaktifkan</button>
+                        {% else %}
+                        <form action="{{ url_for('inventory.settings') }}" method="POST" class="inline">
+                            <input type="hidden" name="action" value="restore_supplier">
+                            <input type="hidden" name="id" value="{{ sup.id }}">
+                            <button type="submit" class="text-xs text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-bold transition">Aktifkan</button>
+                        </form>
+                        {% endif %}
                     </li>
-                    {% else %}
-                    <li class="py-2 text-slate-400 italic text-center">Belum ada supplier</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -80,35 +104,30 @@
     </div>
 </div>
 
-<div id="modal-delete" class="hidden fixed inset-0 bg-slate-900 bg-opacity-70 flex items-center justify-center p-4 z-50 transition-opacity">
-    <div class="bg-white rounded-xl max-w-sm w-full shadow-2xl overflow-hidden">
-        <div class="p-6 text-center space-y-4">
-            <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span class="text-3xl">⚠️</span>
-            </div>
-            <h3 class="text-xl font-bold text-slate-800">Konfirmasi Hapus</h3>
-            <p class="text-sm text-slate-500">Anda yakin ingin menghapus <strong id="delete-name" class="text-slate-800"></strong>? Data yang dihapus tidak bisa dikembalikan.</p>
-            
-            <form id="form-delete" action="{{ url_for('inventory.settings') }}" method="POST" class="pt-4 flex gap-3">
-                <input type="hidden" name="action" id="delete-action" value="">
-                <input type="hidden" name="id" id="delete-id" value="">
-                <button type="button" onclick="closeDeleteModal()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition">Batal</button>
-                <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-sm transition shadow-md">Ya, Hapus!</button>
-            </form>
-        </div>
+<div id="modal-disable" class="hidden fixed inset-0 bg-slate-900 bg-opacity-70 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl max-w-sm w-full shadow-2xl overflow-hidden p-6 text-center space-y-4">
+        <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto text-2xl">⚠️</div>
+        <h3 class="text-lg font-bold text-slate-800">Amankan Histori Sistem</h3>
+        <p class="text-xs text-slate-500">Anda yakin ingin menonaktifkan <strong id="disable-name" class="text-slate-700"></strong>? Data tidak akan dihapus fisik demi menjaga validitas laporan opname masa lalu.</p>
+        
+        <form id="form-disable" action="{{ url_for('inventory.settings') }}" method="POST" class="flex gap-3 pt-2">
+            <input type="hidden" name="action" id="disable-action" value="">
+            <input type="hidden" name="id" id="disable-id" value="">
+            <button type="button" onclick="closeDisableModal()" class="w-full py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200">Batal</button>
+            <button type="submit" class="w-full py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 shadow">Ya, Nonaktifkan</button>
+        </form>
     </div>
 </div>
 
 <script>
-    function confirmDelete(actionType, id, name) {
-        document.getElementById('delete-action').value = actionType;
-        document.getElementById('delete-id').value = id;
-        document.getElementById('delete-name').innerText = name;
-        document.getElementById('modal-delete').classList.remove('hidden');
+    function confirmDisable(actionType, id, name) {
+        document.getElementById('disable-action').value = actionType;
+        document.getElementById('disable-id').value = id;
+        document.getElementById('disable-name').innerText = name;
+        document.getElementById('modal-disable').classList.remove('hidden');
     }
-
-    function closeDeleteModal() {
-        document.getElementById('modal-delete').classList.add('hidden');
+    function closeDisableModal() {
+        document.getElementById('modal-disable').classList.add('hidden');
     }
 </script>
 {% endblock %}

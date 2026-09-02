@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app import db
 from app.inventory import inventory_bp
-from app.models import MasterItem, Category, StorageLocation, Supplier, ActivityLog
+from app.models import MasterItem, Category, StorageLocation, Supplier, ActivityLog, ItemSupplierPrice
 from datetime import datetime
 
 UNITS = ['GRAM', 'KG', 'PCS', 'PACK', 'KARTON', 'LITER', 'ML']
@@ -34,19 +34,19 @@ def list_items():
         units=UNITS
     )
 
+
 @inventory_bp.route('/items/create', methods=['POST'])
 @login_required
 def create_item():
     item_name = request.form.get('name').strip()
-    
     cat_raw = request.form.get('category_id')
     loc_raw = request.form.get('location_id')
-    sup_raw = request.form.get('supplier_id')
+    
+    # 1. TANGKAP LIST SUPPLIER (Gunakan getlist, bukan get)
+    supplier_ids = request.form.getlist('supplier_ids')
     
     category_id = int(cat_raw) if cat_raw else None
     location_id = int(loc_raw) if loc_raw else None
-    default_supplier_id = int(sup_raw) if sup_raw else None
-    
     unit = request.form.get('unit')
     reorder_point = request.form.get('reorder_point', 0)
     notes = request.form.get('notes', '').strip()
@@ -65,24 +65,45 @@ def create_item():
     item_count = MasterItem.query.count() + 1
     item_code = f"{prefix}-{item_count:04d}"
 
+    # 2. SIMPAN MASTER ITEM (Kosongkan dulu default_supplier_id)
     new_item = MasterItem(
         item_code=item_code,
         item_name=item_name,
         category_id=category_id,
         storage_location_id=location_id,
-        default_supplier_id=default_supplier_id,
+        default_supplier_id=None, # Akan diisi setelah loop supplier
         unit=unit,
         reorder_point=int(reorder_point) if reorder_point else 0,
         current_stock=0, 
         notes=notes
     )
-    
     db.session.add(new_item)
-    db.session.flush() # Dapatkan ID sebelum commit
+    db.session.flush() # Dapatkan ID new_item sebelum di-commit
+
+    # 3. LOOPING UNTUK MENYIMPAN BANYAK SUPPLIER
+    if supplier_ids:
+        for index, sup_id in enumerate(supplier_ids):
+            # Anggap supplier urutan pertama yang dipilih sebagai 'default'
+            is_default = True if index == 0 else False
+            
+            # Simpan ke tabel relasi harga
+            new_price = ItemSupplierPrice(
+                item_id=new_item.id,
+                supplier_id=int(sup_id),
+                purchase_price=0, # Nilai awal 0, bisa di-edit di fitur lain nanti
+                is_default=is_default
+            )
+            db.session.add(new_price)
+            
+            # Set default_supplier_id di tabel MasterItem
+            if is_default:
+                new_item.default_supplier_id = int(sup_id)
+
+    # 4. LOG AKTIVITAS DAN COMMIT
     log_activity('CREATE', 'MASTER_ITEM', new_item.id, f"Menambahkan item baru: {item_code} - {item_name}")
     db.session.commit()
     
-    flash(f"Barang {item_name} ({item_code}) berhasil didaftarkan!", "success")
+    flash(f"Barang {item_name} ({item_code}) berhasil didaftarkan dengan {len(supplier_ids)} supplier!", "success")
     return redirect(url_for('inventory.list_items'))
 
 @inventory_bp.route('/items/update/<int:id>', methods=['POST'])
@@ -104,10 +125,29 @@ def update_item(id):
     item.item_name = item_name
     item.category_id = int(request.form.get('category_id')) if request.form.get('category_id') else None
     item.storage_location_id = int(request.form.get('location_id')) if request.form.get('location_id') else None
-    item.default_supplier_id = int(request.form.get('supplier_id')) if request.form.get('supplier_id') else None
     item.unit = request.form.get('unit')
     item.reorder_point = int(request.form.get('reorder_point', 0))
     item.notes = request.form.get('notes', '').strip()
+    supplier_ids = request.form.getlist('supplier_ids')
+    
+    # Hapus semua relasi harga supplier yang lama untuk item ini
+    ItemSupplierPrice.query.filter_by(item_id=item.id).delete()
+    item.default_supplier_id = None # Reset default
+
+    # Masukkan relasi supplier yang baru (sama seperti logika create)
+    if supplier_ids:
+        for index, sup_id in enumerate(supplier_ids):
+            is_default = True if index == 0 else False
+            new_price = ItemSupplierPrice(
+                item_id=item.id,
+                supplier_id=int(sup_id),
+                purchase_price=0,
+                is_default=is_default
+            )
+            db.session.add(new_price)
+            
+            if is_default:
+                item.default_supplier_id = int(sup_id)
 
     log_activity('UPDATE', 'MASTER_ITEM', item.id, f"Memperbarui data item: {item.item_code}")
     db.session.commit()

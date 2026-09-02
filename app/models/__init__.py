@@ -99,12 +99,11 @@ class StockOpnameSession(db.Model):
     __tablename__ = 'stock_opname_sessions'
     id = db.Column(db.Integer, primary_key=True)
     session_code = db.Column(db.String(50), unique=True, nullable=False) # e.g., OP-20260528-001
-    session_datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    session_datetime = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     notes = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default='COMPLETED') # e.g., DRAFT, COMPLETED
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)   
     snapshots = db.relationship('StockSnapshot', backref='session_rel', lazy=True, cascade="all, delete-orphan")
 
 # 8. MODEL STOCK SNAPSHOTS (DETAIL - UPDATED)
@@ -120,7 +119,7 @@ class StockSnapshot(db.Model):
     
     notes = db.Column(db.String(255), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 # 9. MODEL ACTIVITY LOGS (AUDIT TRAIL - NEW)
 class ActivityLog(db.Model):
@@ -131,4 +130,4 @@ class ActivityLog(db.Model):
     entity_type = db.Column(db.String(50), nullable=False) # e.g., MASTER_ITEM, CATEGORY
     entity_id = db.Column(db.Integer, nullable=True) # ID dari data yang diubah
     description = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)

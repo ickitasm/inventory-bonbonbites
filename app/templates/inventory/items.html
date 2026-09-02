@@ -1,9 +1,37 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Pastikan jQuery dimuat SEBELUM Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+    /* Styling agar Select2 menyatu dengan gaya Tailwind Bootstrap Anda */
+    .select2-container .select2-selection--multiple {
+        border-color: #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.25rem;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #4f46e5; /* Indigo-600 */
+        color: white;
+        border: none;
+        border-radius: 0.25rem;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: white;
+        margin-right: 5px;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ffc107;
+    }
+</style>
+
 <div class="container mx-auto px-4 py-6">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Master Item (Katalog Barang)</h1>
+        <!-- Tombol Tambah memanggil toggleModal -->
         <button onclick="toggleModal('modal-add')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm shadow">
             + Tambah Barang Baru
         </button>
@@ -38,16 +66,46 @@
                     </td>
                     <td class="px-6 py-4"><span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">{{ item.category_rel.category_name if item.category_rel else '-' }}</span></td>
                     <td class="px-6 py-4 text-slate-500 text-xs">{{ item.location_rel.location_code if item.location_rel else '-' }}</td>
-                    <td class="px-6 py-4 text-slate-500 text-xs font-medium">{{ item.default_supplier.supplier_name if item.default_supplier else '-' }}</td>
+                    
+                    <td class="px-6 py-4 text-slate-500 text-xs font-medium">
+                        {% if item.supplier_prices %}
+                            {% for price_rel in item.supplier_prices %}
+                                <span class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded text-[10px]">{{ price_rel.supplier_rel.supplier_name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    
                     <td class="px-6 py-4 text-center text-slate-500">{{ item.reorder_point }} {{ item.unit }}</td>
                     <td class="px-6 py-4 font-bold {% if item.current_stock <= item.reorder_point %}text-rose-600{% else %}text-emerald-600{% endif %}">
                         {{ item.current_stock }} {{ item.unit }}
                     </td>
-                    <td class="px-6 py-4 text-center flex justify-center space-x-2 mt-1">
-                        <button onclick="openEditModal('{{ item.id }}', '{{ item.item_name }}', '{{ item.category_id or '' }}', '{{ item.storage_location_id or '' }}', '{{ item.default_supplier_id or '' }}', '{{ item.unit }}', '{{ item.reorder_point }}', '{{ item.notes or '' }}')" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs">Edit</button>
-                        <form action="{{ url_for('inventory.delete_item', id=item.id) }}" method="POST" onsubmit="return confirm('Hapus barang ini secara logis?');" class="inline">
-                            <button type="submit" class="text-rose-600 hover:text-rose-900 font-medium text-xs">Hapus</button>
-                        </form>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center items-center space-x-2">
+                            {% set sup_ids = [] %}
+                            {% for price_rel in item.supplier_prices %}
+                                {% set _ = sup_ids.append(price_rel.supplier_id|string) %}
+                            {% endfor %}
+                            {% set sup_ids_str = sup_ids|join(',') %}
+
+                            <button type="button" 
+                                data-id="{{ item.id }}"
+                                data-name="{{ item.item_name }}"
+                                data-cat="{{ item.category_id }}"
+                                data-loc="{{ item.storage_location_id }}"
+                                data-sups="{{ sup_ids_str }}"
+                                data-unit="{{ item.unit }}"
+                                data-rop="{{ item.reorder_point }}"
+                                onclick="openEditModal(this)" 
+                                class="text-indigo-600 hover:bg-indigo-50 border border-indigo-600 px-3 py-1 rounded text-xs font-medium transition-colors">
+                                Edit
+                            </button>
+                            
+                            <form action="{{ url_for('inventory.delete_item', id=item.id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus barang ini?');" class="m-0 p-0">
+                                <button type="submit" class="text-rose-600 hover:bg-rose-50 border border-rose-600 px-3 py-1 rounded text-xs font-medium transition-colors">Hapus</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -56,14 +114,16 @@
     </div>
 </div>
 
-<div id="modal-add" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+<!-- MODAL TAMBAH BARANG -->
+<div id="modal-add" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto" style="z-index: 9999;">
+    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl my-8 relative">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Tambah Barang Baru</h3>
         <form action="{{ url_for('inventory.create_item') }}" method="POST" class="space-y-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Barang</label>
                 <input type="text" name="name" required class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
+            
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori</label>
@@ -84,16 +144,17 @@
                     </select>
                 </div>
             </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supplier</label>
+                <select name="supplier_ids" id="add-supplier" class="w-full select2-multiple" multiple="multiple" style="width: 100%;">
+                    {% for sup in suppliers %}
+                    <option value="{{ sup.id }}">{{ sup.supplier_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
             <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supplier Utama</label>
-                    <select name="supplier_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
-                        <option value="">-- Supplier --</option>
-                        {% for sup in suppliers %}
-                        <option value="{{ sup.id }}">{{ sup.supplier_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Satuan (Unit)</label>
                     <select name="unit" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
@@ -102,11 +163,12 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Batas Minimum (ROP)</label>
+                    <input type="number" name="reorder_point" value="0" min="0" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Batas Minimum (Reorder Point)</label>
-                <input type="number" name="reorder_point" value="0" min="0" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
-            </div>
+            
             <div class="flex justify-end space-x-2 pt-2">
                 <button type="button" onclick="toggleModal('modal-add')" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">Batal</button>
                 <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm shadow">Simpan</button>
@@ -115,14 +177,16 @@
     </div>
 </div>
 
-<div id="modal-edit" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+<!-- MODAL EDIT BARANG -->
+<div id="modal-edit" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto" style="z-index: 9999;">
+    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl my-8 relative">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Edit Data Barang</h3>
         <form id="form-edit" action="" method="POST" class="space-y-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Barang</label>
                 <input type="text" id="edit-name" name="name" required class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
             </div>
+            
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori</label>
@@ -143,16 +207,17 @@
                     </select>
                 </div>
             </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supplier</label>
+                <select id="edit-supplier" name="supplier_ids" class="w-full select2-multiple" multiple="multiple" style="width: 100%;">
+                    {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}">{{ supplier.supplier_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
             <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supplier Utama</label>
-                    <select id="edit-supplier" name="supplier_id" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
-                        <option value="">-- Supplier --</option>
-                        {% for sup in suppliers %}
-                        <option value="{{ sup.id }}">{{ sup.supplier_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Satuan (Unit)</label>
                     <select id="edit-unit" name="unit" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
@@ -161,11 +226,12 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Batas Minimum (ROP)</label>
+                    <input type="number" id="edit-rop" name="reorder_point" min="0" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Batas Minimum (Reorder Point)</label>
-                <input type="number" id="edit-rop" name="reorder_point" min="0" class="w-full border rounded-lg p-2 text-sm focus:outline-indigo-600">
-            </div>
+            
             <div class="flex justify-end space-x-2 pt-2">
                 <button type="button" onclick="toggleModal('modal-edit')" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">Batal</button>
                 <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm shadow">Simpan Perubahan</button>
@@ -175,18 +241,48 @@
 </div>
 
 <script>
+    // 1. FUNGSI INI WAJIB ADA UNTUK MEMBUKA/MENUTUP MODAL
     function toggleModal(id) {
         document.getElementById(id).classList.toggle('hidden');
     }
-    function openEditModal(id, name, cat_id, loc_id, sup_id, unit, rop, notes) {
+
+    // 2. Fungsi Khusus Edit dengan Data Attributes
+    function openEditModal(buttonElement) {
+        let id = buttonElement.getAttribute('data-id');
+        let name = buttonElement.getAttribute('data-name');
+        let cat_id = buttonElement.getAttribute('data-cat');
+        let loc_id = buttonElement.getAttribute('data-loc');
+        let sup_ids_str = buttonElement.getAttribute('data-sups');
+        let unit = buttonElement.getAttribute('data-unit');
+        let rop = buttonElement.getAttribute('data-rop');
+
         document.getElementById('form-edit').action = `/inventory/items/update/${id}`;
         document.getElementById('edit-name').value = name;
-        document.getElementById('edit-category').value = cat_id;
-        document.getElementById('edit-location').value = loc_id;
-        document.getElementById('edit-supplier').value = sup_id;
-        document.getElementById('edit-unit').value = unit;
-        document.getElementById('edit-rop').value = rop;
+        
+        document.getElementById('edit-category').value = (cat_id && cat_id !== 'None') ? cat_id : '';
+        document.getElementById('edit-location').value = (loc_id && loc_id !== 'None') ? loc_id : '';
+        document.getElementById('edit-unit').value = (unit && unit !== 'None') ? unit : '';
+        document.getElementById('edit-rop').value = (rop && rop !== 'None') ? rop : 0;
+        
+        let sup_ids_array = sup_ids_str ? sup_ids_str.split(',') : [];
+        $('#edit-supplier').val(sup_ids_array).trigger('change');
+        
         toggleModal('modal-edit');
     }
+
+    // 3. Inisialisasi jQuery & Select2 ketika dokumen siap
+    $(document).ready(function() {
+        $('#add-supplier').select2({
+            placeholder: "Pilih supplier...",
+            allowClear: true,
+            dropdownParent: $('#modal-add') 
+        });
+        
+        $('#edit-supplier').select2({
+            placeholder: "Pilih supplier...",
+            allowClear: true,
+            dropdownParent: $('#modal-edit') 
+        });
+    });
 </script>
 {% endblock %}

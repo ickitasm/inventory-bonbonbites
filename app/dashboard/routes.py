@@ -1,11 +1,13 @@
 from flask import render_template
 from flask_login import login_required
+from app.auth.routes import roles_required
 from app.dashboard import dashboard_bp
 from app.models import MasterItem, StockOpnameSession
+from app.utils import roles_required
 
 @dashboard_bp.route('/')
 @dashboard_bp.route('/index')
-@login_required
+@roles_required('Admin', 'Manager', 'Staff')
 def index():
     # 1. Hitung statistik agregat berdasarkan struktur DB baru
     total_items = MasterItem.query.filter_by(deleted_at=None).count()
@@ -30,3 +32,4 @@ def index():
         total_sessions=total_sessions,
         critical_items=critical_items
     )
+pass

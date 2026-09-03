@@ -4,6 +4,8 @@ from app.snapshot import snapshot_bp
 from app.models import MasterItem, StockOpnameSession, StockSnapshot, ActivityLog, Category
 from app import db
 from datetime import datetime, timedelta
+from app.auth.routes import roles_required
+from app.utils import roles_required
 
 INDONESIAN_MONTHS = {
     1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April', 5: 'Mei', 6: 'Juni',
@@ -22,6 +24,7 @@ def log_activity(action, entity_type, entity_id, description):
 
 @snapshot_bp.route('/opname', methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin', 'Manager', 'Staff')
 def opname():
     if request.method == 'POST':
         items = MasterItem.query.filter_by(deleted_at=None).all()
@@ -83,8 +86,11 @@ def opname():
     categories = Category.query.filter_by(is_active=True).all()
     
     return render_template('snapshot/opname.html', items=items, categories=categories, current_cat=category_filter)
+pass
+
 @snapshot_bp.route('/history')
 @login_required
+@roles_required('Admin', 'Manager')
 def history():
     filter_type = request.args.get('filter_type', 'today')
     start_date = request.args.get('start_date')
@@ -134,3 +140,4 @@ def history():
         start_date=start_date,
         end_date=end_date
     )
+pass

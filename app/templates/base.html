@@ -53,16 +53,19 @@
                     <span class="text-sm font-medium">Dashboard</span>
                 </a>
                 
+                {% if current_user.role in ['Admin', 'Manager'] %}
                 <a href="{{ url_for('inventory.list_items') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">📦</span>
                     <span class="text-sm font-medium">Katalog Master Item</span>
                 </a>
+                {% endif %}
 
                 <a href="{{ url_for('snapshot.opname') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">📋</span>
                     <span class="text-sm font-medium">Input Stock Opname</span>
                 </a>
                 
+                {% if current_user.role in ['Admin', 'Manager'] %}
                 <a href="{{ url_for('snapshot.history') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">🕰️</span>
                     <span class="text-sm font-medium">Riwayat Opname</span>
@@ -71,10 +74,11 @@
                     <span class="text-lg">🏷️</span>
                     <span class="text-sm font-medium">Data Pendukung</span>
                 </a>
+                {% endif %}
             </nav>
 
             <div class="p-4 border-t border-slate-800 bg-slate-950 space-y-2">
-                {% if current_user.role == 'SUPERADMIN' %}
+                {% if current_user.role == 'Admin' %}
                 <a href="{{ url_for('auth.manage_users') }}" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition group mb-4 border border-slate-700">
                     <span class="text-lg">⚙️</span>
                     <span class="text-sm font-medium text-slate-300">Kelola Pengguna</span>

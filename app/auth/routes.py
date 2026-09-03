@@ -1,9 +1,13 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.auth import auth_bp
 from app.models import User
 from app import db
+from functools import wraps
+from app.utils import roles_required
+
+
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -32,8 +36,24 @@ def logout():
     flash('Anda telah berhasil keluar dari sistem.', 'info')
     return redirect(url_for('auth.login'))
 
+
+def roles_required(*roles):
+    """
+    Decorator untuk membatasi akses berdasarkan role pengguna.
+    Jika role pengguna tidak ada dalam daftar 'roles', kembalikan error 403 Forbidden.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated or current_user.role not in roles:
+                abort(403)
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 @auth_bp.route('/users', methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin')
 def manage_users():
     if current_user.role != 'SUPERADMIN':
         flash('Akses Ditolak: Hanya Superadmin yang dapat mengelola pengguna.', 'danger')
@@ -68,6 +88,7 @@ def manage_users():
         
     users = User.query.all()
     return render_template('auth/manage_users.html', users=users)
+pass
 
 @auth_bp.route('/users/delete/<int:id>', methods=['POST'])
 @login_required

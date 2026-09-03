@@ -4,6 +4,8 @@ from app import db
 from app.inventory import inventory_bp
 from app.models import MasterItem, Category, StorageLocation, Supplier, ActivityLog, ItemSupplierPrice
 from datetime import datetime
+from app.auth.routes import roles_required
+from app.utils import roles_required
 
 UNITS = ['GRAM', 'KG', 'PCS', 'PACK', 'KARTON', 'LITER', 'ML']
 
@@ -37,6 +39,7 @@ def list_items():
 
 @inventory_bp.route('/items/create', methods=['POST'])
 @login_required
+@roles_required('admin', 'manager')
 def create_item():
     item_name = request.form.get('name').strip()
     cat_raw = request.form.get('category_id')
@@ -105,9 +108,11 @@ def create_item():
     
     flash(f"Barang {item_name} ({item_code}) berhasil didaftarkan dengan {len(supplier_ids)} supplier!", "success")
     return redirect(url_for('inventory.list_items'))
+pass
 
 @inventory_bp.route('/items/update/<int:id>', methods=['POST'])
 @login_required
+@roles_required('Admin', 'Manager')
 def update_item(id):
     item = MasterItem.query.get_or_404(id)
     item_name = request.form.get('name').strip()
@@ -153,9 +158,11 @@ def update_item(id):
     db.session.commit()
     flash(f"Data barang {item.item_code} berhasil diperbarui!", "success")
     return redirect(url_for('inventory.list_items'))
+pass
 
 @inventory_bp.route('/items/delete/<int:id>', methods=['POST'])
 @login_required
+@roles_required('Admin', 'Manager')
 def delete_item(id):
     item = MasterItem.query.get_or_404(id)
     item.deleted_at = datetime.utcnow()
@@ -163,9 +170,11 @@ def delete_item(id):
     db.session.commit()
     flash(f"Barang {item.item_name} berhasil dihapus dari sistem!", "warning")
     return redirect(url_for('inventory.list_items'))
+pass
 
 @inventory_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin', 'Manager')
 def settings():
     if request.method == 'POST':
         action = request.form.get('action')
@@ -263,3 +272,4 @@ def settings():
         locations=locations, 
         suppliers=suppliers
     )
+pass

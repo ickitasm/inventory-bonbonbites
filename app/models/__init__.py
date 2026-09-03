@@ -10,7 +10,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     full_name = db.Column(db.String(100), nullable=True) # NEW
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), default='MANAGER')
+    role = db.Column(db.String(20), nullable=False, default='Staff')
     is_active = db.Column(db.Boolean, default=True) # NEW
     created_at = db.Column(db.DateTime, default=datetime.utcnow) # NEW
     

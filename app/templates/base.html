@@ -8,6 +8,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
+    <!-- FLash Message Notification -->
     <div class="fixed top-4 right-4 z-50 max-w-sm space-y-2">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -27,6 +28,7 @@
 
     <div class="flex flex-1 min-h-screen">
         
+        <!-- SIDEBAR (Hanya tampil jika sudah login) -->
         {% if current_user.is_authenticated %}
         <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl min-h-screen">
             <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
@@ -37,6 +39,7 @@
                 </div>
             </div>
 
+            <!-- Identitas User & Role -->
             <div class="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
                 <div class="flex flex-col">
                     <span class="text-xs text-slate-400">Login sebagai:</span>
@@ -48,28 +51,32 @@
             </div>
 
             <nav class="flex-1 p-4 space-y-1">
+                <!-- TAMPIL UNTUK SEMUA ROLE (Admin, Manager, Staff) -->
                 <a href="{{ url_for('dashboard.index') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">📊</span>
                     <span class="text-sm font-medium">Dashboard</span>
                 </a>
                 
-                {% if current_user.role in ['Admin', 'Manager'] %}
+                <a href="{{ url_for('snapshot.opname') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+                    <span class="text-lg">📋</span>
+                    <span class="text-sm font-medium">Input Stock Opname</span>
+                </a>
+
+                {% if current_user.role|lower in ['admin', 'manager'] %}
                 <a href="{{ url_for('inventory.list_items') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">📦</span>
                     <span class="text-sm font-medium">Katalog Master Item</span>
                 </a>
                 {% endif %}
-
-                <a href="{{ url_for('snapshot.opname') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
-                    <span class="text-lg">📋</span>
-                    <span class="text-sm font-medium">Input Stock Opname</span>
-                </a>
                 
-                {% if current_user.role in ['Admin', 'Manager'] %}
+                {% if current_user.role|lower in ['admin', 'manager', 'staff'] %}
                 <a href="{{ url_for('snapshot.history') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">🕰️</span>
                     <span class="text-sm font-medium">Riwayat Opname</span>
                 </a>
+                {% endif %}
+
+                {% if current_user.role|lower in ['admin', 'manager'] %}
                 <a href="{{ url_for('inventory.settings') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">🏷️</span>
                     <span class="text-sm font-medium">Data Pendukung</span>
@@ -78,7 +85,8 @@
             </nav>
 
             <div class="p-4 border-t border-slate-800 bg-slate-950 space-y-2">
-                {% if current_user.role == 'Admin' %}
+                <!-- TAMPIL EKSKLUSIF HANYA UNTUK ADMIN -->
+                {% if current_user.role|lower == 'admin' %}
                 <a href="{{ url_for('auth.manage_users') }}" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition group mb-4 border border-slate-700">
                     <span class="text-lg">⚙️</span>
                     <span class="text-sm font-medium text-slate-300">Kelola Pengguna</span>
@@ -93,6 +101,7 @@
         </aside>
         {% endif %}
 
+        <!-- KONTEN UTAMA -->
         <div class="flex-1 flex flex-col {% if not current_user.is_authenticated %}bg-slate-100 items-center justify-center p-4{% else %}bg-slate-50{% endif %}">
                     
             <main class="{% if current_user.is_authenticated %}p-6 flex-grow{% else %}w-full max-w-md{% endif %}">
@@ -102,6 +111,7 @@
 
     </div>
 
+    <!-- FOOTER -->
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 z-10">
         &copy; 2026 Bonbonbites Inventory System. All Rights Reserved.
     </footer>

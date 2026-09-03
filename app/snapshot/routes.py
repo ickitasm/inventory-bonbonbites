@@ -90,7 +90,7 @@ pass
 
 @snapshot_bp.route('/history')
 @login_required
-@roles_required('Admin', 'Manager')
+@roles_required('Admin', 'Manager', 'Staff')
 def history():
     filter_type = request.args.get('filter_type', 'today')
     start_date = request.args.get('start_date')

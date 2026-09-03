@@ -112,7 +112,7 @@ pass
 
 @inventory_bp.route('/items/update/<int:id>', methods=['POST'])
 @login_required
-@roles_required('Admin', 'Manager')
+@roles_required('admin', 'manager')
 def update_item(id):
     item = MasterItem.query.get_or_404(id)
     item_name = request.form.get('name').strip()
@@ -162,7 +162,7 @@ pass
 
 @inventory_bp.route('/items/delete/<int:id>', methods=['POST'])
 @login_required
-@roles_required('Admin', 'Manager')
+@roles_required('admin', 'manager')
 def delete_item(id):
     item = MasterItem.query.get_or_404(id)
     item.deleted_at = datetime.utcnow()
@@ -174,7 +174,7 @@ pass
 
 @inventory_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
-@roles_required('Admin', 'Manager')
+@roles_required('admin', 'manager')
 def settings():
     if request.method == 'POST':
         action = request.form.get('action')

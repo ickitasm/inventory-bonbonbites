@@ -28,7 +28,7 @@
 
     <div class="flex flex-1 min-h-screen">
         
-        <!-- SIDEBAR (Hanya tampil jika sudah login) -->
+        <!-- SIDEBAR -->
         {% if current_user.is_authenticated %}
         <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl min-h-screen">
             <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
@@ -62,21 +62,18 @@
                     <span class="text-sm font-medium">Input Stock Opname</span>
                 </a>
 
+                <a href="{{ url_for('snapshot.history') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+                    <span class="text-lg">🕰️</span>
+                    <span class="text-sm font-medium">Riwayat Opname</span>
+                </a>
+
+                <!-- TAMPIL HANYA UNTUK ADMIN & MANAGER -->
                 {% if current_user.role|lower in ['admin', 'manager'] %}
                 <a href="{{ url_for('inventory.list_items') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">📦</span>
                     <span class="text-sm font-medium">Katalog Master Item</span>
                 </a>
-                {% endif %}
                 
-                {% if current_user.role|lower in ['admin', 'manager', 'staff'] %}
-                <a href="{{ url_for('snapshot.history') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
-                    <span class="text-lg">🕰️</span>
-                    <span class="text-sm font-medium">Riwayat Opname</span>
-                </a>
-                {% endif %}
-
-                {% if current_user.role|lower in ['admin', 'manager'] %}
                 <a href="{{ url_for('inventory.settings') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
                     <span class="text-lg">🏷️</span>
                     <span class="text-sm font-medium">Data Pendukung</span>

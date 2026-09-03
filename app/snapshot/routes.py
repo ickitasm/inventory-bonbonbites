@@ -24,7 +24,7 @@ def log_activity(action, entity_type, entity_id, description):
 
 @snapshot_bp.route('/opname', methods=['GET', 'POST'])
 @login_required
-@roles_required('Admin', 'Manager', 'Staff')
+@roles_required('admin', 'manager', 'staff')
 def opname():
     if request.method == 'POST':
         items = MasterItem.query.filter_by(deleted_at=None).all()

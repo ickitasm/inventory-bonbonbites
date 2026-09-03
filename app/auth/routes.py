@@ -32,45 +32,49 @@ def logout():
     flash('Anda telah keluar dari sistem.', 'info')
     return redirect(url_for('auth.login'))
 
-@auth_bp.route('/manage_users')
+@auth_bp.route('/manage_users', methods=['GET', 'POST'])
 @login_required
-@roles_required('Admin')
+@roles_required('admin') # HANYA ADMIN
 def manage_users():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        # 1. LOGIKA MENGHAPUS USER (Sesuai dengan HTML action="delete_user")
+        if action == 'delete_user':
+            user_id = request.form.get('id')
+            user_to_delete = User.query.get(user_id)
+            if user_to_delete:
+                if user_to_delete.id == current_user.id:
+                    flash('Anda tidak dapat menghapus akun Anda sendiri!', 'danger')
+                else:
+                    db.session.delete(user_to_delete)
+                    db.session.commit()
+                    flash(f'Akun {user_to_delete.username} berhasil dihapus.', 'success')
+            return redirect(url_for('auth.manage_users'))
+            
+        # 2. LOGIKA MENAMBAH USER
+        # Menangkap data jika form tambah user disubmit ke route ini
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role')
+        
+        # Memastikan username dan password ada isinya
+        if username and password:
+            role = role.lower() if role else 'staff'
+            
+            if User.query.filter_by(username=username).first():
+                flash('Username sudah terdaftar!', 'danger')
+            else:
+                new_user = User(
+                    username=username,
+                    password_hash=generate_password_hash(password),
+                    role=role
+                )
+                db.session.add(new_user)
+                db.session.commit()
+                flash(f'Pengguna {username} berhasil ditambahkan!', 'success')
+            return redirect(url_for('auth.manage_users'))
+            
+    # GET method (Tampilkan halaman dan daftar pengguna)
     users = User.query.all()
     return render_template('auth/manage_users.html', users=users)
-
-@auth_bp.route('/add_user', methods=['POST'])
-@login_required
-@roles_required('Admin')
-def add_user():
-    username = request.form.get('username')
-    password = request.form.get('password')
-    role = request.form.get('role')
-    
-    if User.query.filter_by(username=username).first():
-        flash('Username sudah terdaftar!', 'danger')
-    else:
-        new_user = User(
-            username=username,
-            password_hash=generate_password_hash(password),
-            role=role
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        flash(f'Pengguna {username} berhasil ditambahkan!', 'success')
-        
-    return redirect(url_for('auth.manage_users'))
-
-@auth_bp.route('/delete_user/<int:id>', methods=['POST'])
-@login_required
-@roles_required('Admin')
-def delete_user(id):
-    user_to_delete = User.query.get_or_404(id)
-    if user_to_delete.id == current_user.id:
-        flash('Anda tidak dapat menghapus akun Anda sendiri!', 'danger')
-    else:
-        db.session.delete(user_to_delete)
-        db.session.commit()
-        flash(f'Pengguna {user_to_delete.username} berhasil dihapus.', 'warning')
-        
-    return redirect(url_for('auth.manage_users'))

@@ -72,7 +72,7 @@ class MasterItem(db.Model):
     
     unit = db.Column(db.String(20))
     reorder_point = db.Column(db.Integer, default=0)
-    current_stock = db.Column(db.Integer, default=0) 
+    current_stock = db.Column(db.Numeric(18, 2), default=0) 
     notes = db.Column(db.Text, nullable=True)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -113,9 +113,9 @@ class StockSnapshot(db.Model):
     session_id = db.Column(db.Integer, db.ForeignKey('stock_opname_sessions.id'), nullable=False) # NEW FK Header
     item_id = db.Column(db.Integer, db.ForeignKey('master_items.id'), nullable=False)
     
-    physical_qty = db.Column(db.Integer, nullable=False)
-    system_qty_before = db.Column(db.Integer, nullable=False) # NEW (Stok sebelum opname)
-    variance_qty = db.Column(db.Integer, nullable=False) # NEW (Selisih: physical - system)
+    physical_qty = db.Column(db.Numeric(18, 2), nullable=False)
+    system_qty_before = db.Column(db.Numeric(18, 2), nullable=False)
+    variance_qty = db.Column(db.Numeric(18, 2), nullable=False)
     
     notes = db.Column(db.String(255), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

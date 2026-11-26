@@ -4,23 +4,44 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <div class="mb-6 flex justify-between items-center">
+    <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Form Opname Fisik Gudang</h1>
-            <p class="text-sm text-slate-500">Masukkan angka hitungan fisik terbaru di lapangan untuk memperbarui sistem.</p>
+            <p class="text-sm text-slate-500">Masukkan angka hitungan fisik terbaru di lapangan (mendukung angka desimal, misal 1.5).</p>
         </div>
         
-        <form method="GET" action="{{ url_for('snapshot.opname') }}" class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-500 uppercase">Filter Area:</label>
-            <select name="category_id" onchange="this.form.submit()" class="border-slate-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 shadow-sm border">
-                <option value="">Semua Kategori Item</option>
-                {% for cat in categories %}
-                <option value="{{ cat.id }}" {% if current_cat == cat.id|string %}selected{% endif %}>
-                    {{ cat.category_name }}
-                </option>
-                {% endfor %}
-            </select>
-        </form>
+        <div class="flex flex-wrap items-center gap-2">
+            <div>
+                <label for="filter-location" class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Lokasi / Lantai</label>
+                <select id="filter-location" onchange="filterOpnameItems()" class="border-slate-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 shadow-sm border bg-white">
+                    <option value="">Semua Lokasi / Lantai</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}" {% if current_loc == loc.id|string %}selected{% endif %}>
+                        {{ loc.floor_code }} - {{ loc.storage_type }} ({{ loc.location_code }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="filter-category" class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kategori</label>
+                <select id="filter-category" onchange="filterOpnameItems()" class="border-slate-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 shadow-sm border bg-white">
+                    <option value="">Semua Kategori Item</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if current_cat == cat.id|string %}selected{% endif %}>
+                        {{ cat.category_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3 flex justify-between items-center text-xs text-slate-500">
+        <span id="filter-counter">Menampilkan {{ items|length }} dari {{ items|length }} item</span>
+        <button type="button" id="reset-filter-btn" onclick="resetOpnameFilters()" class="hidden text-indigo-600 hover:text-indigo-800 font-semibold">
+            Reset Filter
+        </button>
     </div>
 
     <form action="{{ url_for('snapshot.opname') }}" method="POST" class="space-y-6">
@@ -33,25 +54,41 @@
                         <th class="p-4 border-b text-center w-56">Input Stok Fisik Riil</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm divide-y divide-slate-200">
+                <tbody id="opname-table-body" class="text-sm divide-y divide-slate-200">
                     {% for item in items %}
-                    <tr class="hover:bg-slate-50 transition">
+                    {% set loc = location_map.get(item.storage_location_id) %}
+                    {% set clean_stock = ('%.2f'|format((item.current_stock or 0)|float)).rstrip('0').rstrip('.') %}
+                    <tr class="opname-row hover:bg-slate-50 transition"
+                        data-category-id="{{ item.category_id or '' }}"
+                        data-location-id="{{ item.storage_location_id or '' }}">
                         <td class="p-4">
                             <div class="font-bold text-slate-800">{{ item.item_name }}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">{{ item.item_code }}</div>
+                            <div class="mt-1 flex flex-wrap items-center gap-2">
+                                <span class="text-[10px] text-slate-400 font-mono">{{ item.item_code }}</span>
+                                {% if loc %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                    {{ loc.floor_code }} • {{ loc.storage_type }} ({{ loc.location_code }})
+                                </span>
+                                {% endif %}
+                            </div>
                         </td>
                         <td class="p-4 text-center font-medium text-slate-500">
-                            {{ item.current_stock }} {{ item.unit }}
+                            {{ clean_stock }} {{ item.unit }}
                         </td>
                         <td class="p-4">
                             <div class="flex items-center justify-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50 max-w-[180px] mx-auto shadow-sm">
                                 <button type="button" onclick="stepQty('stock_{{ item.id }}', -1)" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-sm transition focus:outline-none select-none">-</button>
-                                <input type="number" id="stock_{{ item.id }}" name="stock_{{ item.id }}" min="0" placeholder="{{ item.current_stock }}" class="w-full text-center bg-white p-2 text-sm font-bold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                <input type="number" step="0.01" id="stock_{{ item.id }}" name="stock_{{ item.id }}" min="0" placeholder="{{ clean_stock }}" class="w-full text-center bg-white p-2 text-sm font-bold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                                 <button type="button" onclick="stepQty('stock_{{ item.id }}', 1)" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-sm transition focus:outline-none select-none">+</button>
                             </div>
                         </td>
                     </tr>
                     {% endfor %}
+                    <tr id="empty-filter-row" class="hidden">
+                        <td colspan="3" class="p-8 text-center text-slate-400 text-sm">
+                            Tidak ada item barang pada kombinasi lokasi dan kategori yang dipilih.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -71,17 +108,51 @@
 <script>
     function stepQty(inputId, delta) {
         const input = document.getElementById(inputId);
-        let currentVal = parseInt(input.value);
+        let currentVal = parseFloat(input.value);
         
         if (isNaN(currentVal)) {
-            // Jika kosong, ambil dari placeholder (stok sistem saat ini) sebagai basis dasar
-            currentVal = parseInt(input.placeholder) || 0;
+            currentVal = parseFloat(input.placeholder) || 0;
         }
         
-        const newVal = currentVal + delta;
+        const newVal = Math.round((currentVal + delta) * 100) / 100;
         if (newVal >= 0) {
             input.value = newVal;
         }
     }
+
+    function filterOpnameItems() {
+        const selectedLoc = document.getElementById('filter-location').value;
+        const selectedCat = document.getElementById('filter-category').value;
+        const rows = document.querySelectorAll('.opname-row');
+        const emptyRow = document.getElementById('empty-filter-row');
+        const counter = document.getElementById('filter-counter');
+        const resetBtn = document.getElementById('reset-filter-btn');
+
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const matchLoc = !selectedLoc || row.dataset.locationId === selectedLoc;
+            const matchCat = !selectedCat || row.dataset.categoryId === selectedCat;
+
+            if (matchLoc && matchCat) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        counter.textContent = `Menampilkan ${visibleCount} dari ${rows.length} item`;
+        emptyRow.classList.toggle('hidden', visibleCount > 0);
+        resetBtn.classList.toggle('hidden', !selectedLoc && !selectedCat);
+    }
+
+    function resetOpnameFilters() {
+        document.getElementById('filter-location').value = '';
+        document.getElementById('filter-category').value = '';
+        filterOpnameItems();
+    }
+
+    document.addEventListener('DOMContentLoaded', filterOpnameItems);
 </script>
 {% endblock %}

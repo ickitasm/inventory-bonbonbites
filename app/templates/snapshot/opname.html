@@ -3,17 +3,40 @@
 {% block title %}Input Opname - Bonbonbites{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+<div class="max-w-5xl mx-auto space-y-5">
+    <!-- Header Halaman -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">Form Opname Fisik Gudang</h1>
-            <p class="text-sm text-slate-500">Masukkan angka hitungan fisik terbaru di lapangan (mendukung angka desimal, misal 1.5).</p>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Form Opname Fisik Gudang</h1>
+            <p class="text-xs sm:text-sm text-slate-500">Isi jumlah fisik riil di lapangan (mendukung angka desimal, misal <span class="font-semibold text-slate-700">1.5</span>).</p>
         </div>
-        
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex items-center gap-2 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-xs font-semibold text-indigo-700">
+            <span>Terisi:</span>
+            <span id="filled-counter" class="font-extrabold">0</span>
+            <span>/ {{ items|length }} item</span>
+        </div>
+    </div>
+
+    <!-- Panel Filter Sejajar & Responsif -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Pencarian Nama / SKU -->
             <div>
-                <label for="filter-location" class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Lokasi / Lantai</label>
-                <select id="filter-location" onchange="filterOpnameItems()" class="border-slate-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 shadow-sm border bg-white">
+                <label for="filter-search" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Cari Barang / SKU</label>
+                <div class="relative">
+                    <input type="text" id="filter-search" oninput="filterOpnameItems()" placeholder="Ketik nama atau kode SKU..."
+                           class="w-full border border-slate-300 rounded-lg text-sm pl-9 pr-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Filter Lokasi / Lantai -->
+            <div>
+                <label for="filter-location" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Lokasi / Lantai</label>
+                <select id="filter-location" onchange="filterOpnameItems()"
+                        class="w-full border border-slate-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
                     <option value="">Semua Lokasi / Lantai</option>
                     {% for loc in locations %}
                     <option value="{{ loc.id }}" {% if current_loc == loc.id|string %}selected{% endif %}>
@@ -23,9 +46,11 @@
                 </select>
             </div>
 
-            <div>
-                <label for="filter-category" class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kategori</label>
-                <select id="filter-category" onchange="filterOpnameItems()" class="border-slate-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 shadow-sm border bg-white">
+            <!-- Filter Kategori -->
+            <div class="sm:col-span-2 lg:col-span-1">
+                <label for="filter-category" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kategori</label>
+                <select id="filter-category" onchange="filterOpnameItems()"
+                        class="w-full border border-slate-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
                     <option value="">Semua Kategori Item</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}" {% if current_cat == cat.id|string %}selected{% endif %}>
@@ -35,77 +60,166 @@
                 </select>
             </div>
         </div>
+
+        <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-xs text-slate-500">
+            <span id="filter-counter">Menampilkan {{ items|length }} dari {{ items|length }} item</span>
+            <button type="button" id="reset-filter-btn" onclick="resetOpnameFilters()" class="hidden text-indigo-600 hover:text-indigo-800 font-semibold">
+                Reset Filter
+            </button>
+        </div>
     </div>
 
-    <div class="mb-3 flex justify-between items-center text-xs text-slate-500">
-        <span id="filter-counter">Menampilkan {{ items|length }} dari {{ items|length }} item</span>
-        <button type="button" id="reset-filter-btn" onclick="resetOpnameFilters()" class="hidden text-indigo-600 hover:text-indigo-800 font-semibold">
-            Reset Filter
-        </button>
-    </div>
-
-    <form action="{{ url_for('snapshot.opname') }}" method="POST" class="space-y-6">
+    <!-- Form Utama Opname -->
+    <form action="{{ url_for('snapshot.opname') }}" method="POST" class="space-y-5">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                        <th class="p-4 border-b">Nama Item Barang</th>
-                        <th class="p-4 border-b text-center">Stok Sistem Saat Ini</th>
-                        <th class="p-4 border-b text-center w-56">Input Stok Fisik Riil</th>
-                    </tr>
-                </thead>
-                <tbody id="opname-table-body" class="text-sm divide-y divide-slate-200">
-                    {% for item in items %}
-                    {% set loc = location_map.get(item.storage_location_id) %}
-                    {% set clean_stock = ('%.2f'|format((item.current_stock or 0)|float)).rstrip('0').rstrip('.') %}
-                    <tr class="opname-row hover:bg-slate-50 transition"
-                        data-category-id="{{ item.category_id or '' }}"
-                        data-location-id="{{ item.storage_location_id or '' }}">
-                        <td class="p-4">
-                            <div class="font-bold text-slate-800">{{ item.item_name }}</div>
-                            <div class="mt-1 flex flex-wrap items-center gap-2">
-                                <span class="text-[10px] text-slate-400 font-mono">{{ item.item_code }}</span>
-                                {% if loc %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                    {{ loc.floor_code }} • {{ loc.storage_type }} ({{ loc.location_code }})
-                                </span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="p-4 text-center font-medium text-slate-500">
-                            {{ clean_stock }} {{ item.unit }}
-                        </td>
-                        <td class="p-4">
-                            <div class="flex items-center justify-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50 max-w-[180px] mx-auto shadow-sm">
-                                <button type="button" onclick="stepQty('stock_{{ item.id }}', -1)" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-sm transition focus:outline-none select-none">-</button>
-                                <input type="number" step="0.01" id="stock_{{ item.id }}" name="stock_{{ item.id }}" min="0" placeholder="{{ clean_stock }}" class="w-full text-center bg-white p-2 text-sm font-bold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                <button type="button" onclick="stepQty('stock_{{ item.id }}', 1)" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-sm transition focus:outline-none select-none">+</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    <tr id="empty-filter-row" class="hidden">
-                        <td colspan="3" class="p-8 text-center text-slate-400 text-sm">
-                            Tidak ada item barang pada kombinasi lokasi dan kategori yang dipilih.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- Header Tabel (Tampil di Tablet/Desktop) -->
+            <div class="hidden md:grid md:grid-cols-12 bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider px-5 py-3.5 border-b border-slate-200">
+                <div class="col-span-5">Nama Item Barang</div>
+                <div class="col-span-2 text-center">Stok Sistem</div>
+                <div class="col-span-3 text-center">Input Stok Fisik</div>
+                <div class="col-span-2 text-center">Selisih</div>
+            </div>
+
+            <!-- Daftar Item (Responsif: Card di Mobile, Grid Baris di Desktop) -->
+            <div id="opname-list" class="divide-y divide-slate-200">
+                {% for item in items %}
+                {% set loc = location_map.get(item.storage_location_id) %}
+                {% set clean_stock = ('%.2f'|format((item.current_stock or 0)|float)).rstrip('0').rstrip('.') %}
+                <div class="opname-row p-4 md:px-5 md:py-4 hover:bg-slate-50/80 transition grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center"
+                     data-search="{{ (item.item_name ~ ' ' ~ item.item_code)|lower }}"
+                     data-category-id="{{ item.category_id or '' }}"
+                     data-location-id="{{ item.storage_location_id or '' }}">
+
+                    <!-- Info Barang -->
+                    <div class="md:col-span-5">
+                        <div class="font-bold text-slate-800 text-sm sm:text-base">{{ item.item_name }}</div>
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                            <span class="text-[11px] text-slate-500 font-mono bg-slate-100 px-1.5 py-0.5 rounded">{{ item.item_code }}</span>
+                            {% for cat in categories if cat.id == item.category_id %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600">
+                                {{ cat.category_name }}
+                            </span>
+                            {% endfor %}
+                            {% if loc %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                {{ loc.floor_code }} • {{ loc.storage_type }} ({{ loc.location_code }})
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Stok Sistem -->
+                    <div class="md:col-span-2 flex md:block justify-between items-center text-xs sm:text-sm">
+                        <span class="md:hidden text-slate-500 font-medium">Stok Sistem:</span>
+                        <div class="md:text-center font-semibold text-slate-600">
+                            {{ clean_stock }} <span class="text-xs text-slate-400">{{ item.unit }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Kontrol Input Stok Fisik -->
+                    <div class="md:col-span-3 flex justify-between md:justify-center items-center">
+                        <span class="md:hidden text-xs text-slate-500 font-medium">Stok Fisik Riil:</span>
+                        <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50 w-44 sm:w-48 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                            <button type="button" onclick="stepQty('stock_{{ item.id }}', -1)"
+                                    class="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-extrabold text-base transition select-none">
+                                −
+                            </button>
+                            <input type="number" step="0.01" min="0"
+                                   id="stock_{{ item.id }}"
+                                   name="stock_{{ item.id }}"
+                                   data-sys="{{ (item.current_stock or 0)|float }}"
+                                   data-unit="{{ item.unit }}"
+                                   oninput="updateRowVariance(this)"
+                                   placeholder="{{ clean_stock }}"
+                                   class="opname-input w-full h-10 text-center bg-white px-2 text-sm font-bold text-slate-800 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                            <button type="button" onclick="stepQty('stock_{{ item.id }}', 1)"
+                                    class="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-extrabold text-base transition select-none">
+                                +
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Indikator Selisih Real-time -->
+                    <div class="md:col-span-2 flex md:block justify-between items-center text-xs">
+                        <span class="md:hidden text-slate-500 font-medium">Selisih:</span>
+                        <div id="var_{{ item.id }}" class="md:text-center font-semibold text-slate-400">
+                            Belum diisi
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div id="empty-filter-row" class="hidden p-8 text-center text-slate-400 text-sm">
+                    Tidak ada item barang yang cocok dengan filter atau kata kunci pencarian.
+                </div>
+            </div>
         </div>
 
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
-            <label class="block text-xs font-bold text-slate-600 uppercase">Catatan Tambahan Sesi Opname</label>
-            <input type="text" name="session_notes" placeholder="Contoh: Opname rutin akhir bulan / Pemeriksaan bumbu kadaluwarsa" class="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-indigo-600">
+        <!-- Catatan Sesi -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <label for="session_notes" class="block text-xs font-bold text-slate-600 uppercase tracking-wide">Catatan Tambahan Sesi Opname</label>
+            <input type="text" id="session_notes" name="session_notes"
+                   placeholder="Contoh: Opname rutin akhir bulan / Pemeriksaan bahan baku chiller"
+                   class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
         </div>
 
-        <div class="flex justify-end gap-3">
-            <a href="{{ url_for('snapshot.history') }}" class="px-5 py-2.5 bg-white border rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Batal</a>
-            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition shadow-md">Simpan Seluruh Hasil Opname</button>
+        <!-- Tombol Aksi -->
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+            <a href="{{ url_for('snapshot.history') }}"
+               class="w-full sm:w-auto text-center px-5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+                Batal
+            </a>
+            <button type="submit"
+                    class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition shadow-md">
+                Simpan Seluruh Hasil Opname
+            </button>
         </div>
     </form>
 </div>
 
 <script>
+    function formatCleanNumber(num) {
+        return (Math.round(num * 100) / 100).toString();
+    }
+
+    function updateRowVariance(input) {
+        const itemId = input.id.replace('stock_', '');
+        const badge = document.getElementById('var_' + itemId);
+        const sysVal = parseFloat(input.dataset.sys) || 0;
+        const unit = input.dataset.unit || '';
+
+        if (input.value.trim() === '' || isNaN(parseFloat(input.value))) {
+            badge.className = 'md:text-center font-semibold text-slate-400';
+            badge.textContent = 'Belum diisi';
+        } else {
+            const phyVal = parseFloat(input.value);
+            const diff = Math.round((phyVal - sysVal) * 100) / 100;
+
+            if (diff === 0) {
+                badge.className = 'md:text-center font-bold text-slate-600';
+                badge.textContent = 'Sesuai (0)';
+            } else if (diff > 0) {
+                badge.className = 'md:text-center font-bold text-emerald-600';
+                badge.textContent = '+' + formatCleanNumber(diff) + ' ' + unit;
+            } else {
+                badge.className = 'md:text-center font-bold text-rose-600';
+                badge.textContent = formatCleanNumber(diff) + ' ' + unit;
+            }
+        }
+        updateFilledCounter();
+    }
+
+    function updateFilledCounter() {
+        const inputs = document.querySelectorAll('.opname-input');
+        let filled = 0;
+        inputs.forEach(inp => {
+            if (inp.value.trim() !== '' && !isNaN(parseFloat(inp.value))) {
+                filled++;
+            }
+        });
+        document.getElementById('filled-counter').textContent = filled;
+    }
+
     function stepQty(inputId, delta) {
         const input = document.getElementById(inputId);
         let currentVal = parseFloat(input.value);
@@ -117,10 +231,12 @@
         const newVal = Math.round((currentVal + delta) * 100) / 100;
         if (newVal >= 0) {
             input.value = newVal;
+            updateRowVariance(input);
         }
     }
 
     function filterOpnameItems() {
+        const searchQuery = document.getElementById('filter-search').value.trim().toLowerCase();
         const selectedLoc = document.getElementById('filter-location').value;
         const selectedCat = document.getElementById('filter-category').value;
         const rows = document.querySelectorAll('.opname-row');
@@ -131,10 +247,11 @@
         let visibleCount = 0;
 
         rows.forEach(row => {
+            const matchSearch = !searchQuery || row.dataset.search.includes(searchQuery);
             const matchLoc = !selectedLoc || row.dataset.locationId === selectedLoc;
             const matchCat = !selectedCat || row.dataset.categoryId === selectedCat;
 
-            if (matchLoc && matchCat) {
+            if (matchSearch && matchLoc && matchCat) {
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -144,10 +261,11 @@
 
         counter.textContent = `Menampilkan ${visibleCount} dari ${rows.length} item`;
         emptyRow.classList.toggle('hidden', visibleCount > 0);
-        resetBtn.classList.toggle('hidden', !selectedLoc && !selectedCat);
+        resetBtn.classList.toggle('hidden', !searchQuery && !selectedLoc && !selectedCat);
     }
 
     function resetOpnameFilters() {
+        document.getElementById('filter-search').value = '';
         document.getElementById('filter-location').value = '';
         document.getElementById('filter-category').value = '';
         filterOpnameItems();

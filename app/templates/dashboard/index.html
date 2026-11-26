@@ -3,35 +3,35 @@
 {% block title %}Dashboard - Bonbonbites{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="max-w-7xl mx-auto space-y-6">
     <div>
-        <h1 class="text-2xl font-bold text-slate-800">Ringkasan Sistem</h1>
-        <p class="text-sm text-slate-500">Selamat datang kembali, <span class="font-semibold text-slate-700">{{ current_user.full_name or current_user.username }}</span> ({{ current_user.role }}).</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Ringkasan Sistem</h1>
+        <p class="text-xs sm:text-sm text-slate-500">Selamat datang kembali, <span class="font-semibold text-slate-700">{{ current_user.full_name or current_user.username }}</span> ({{ current_user.role }}).</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
             <div>
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Katalog Item Aktif</p>
-                <h3 class="text-3xl font-extrabold text-slate-800 mt-1">{{ total_items }}</h3>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1">{{ total_items }}</h3>
                 <p class="text-xs text-slate-500 mt-1">SKU Terdaftar di Sistem</p>
             </div>
             <span class="text-3xl bg-indigo-50 p-3 rounded-xl">📦</span>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
             <div>
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peringatan Stok Rendah</p>
-                <h3 class="text-3xl font-extrabold text-rose-600 mt-1">{{ low_stock_count }}</h3>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1">{{ low_stock_count }}</h3>
                 <p class="text-xs text-slate-500 mt-1">Item Butuh Restock Segera</p>
             </div>
             <span class="text-3xl bg-rose-50 p-3 rounded-xl">⚠️</span>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
             <div>
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Sesi Opname</p>
-                <h3 class="text-3xl font-extrabold text-emerald-600 mt-1">{{ total_sessions }}</h3>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1">{{ total_sessions }}</h3>
                 <p class="text-xs text-slate-500 mt-1">Aktivitas Audit Fisik Terbuku</p>
             </div>
             <span class="text-3xl bg-emerald-50 p-3 rounded-xl">📋</span>
@@ -39,9 +39,9 @@
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-            <h3 class="font-bold text-slate-800">Top 5 Stok Kritis (Mendesak)</h3>
-            <span class="px-2 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full">Real-time Warning</span>
+        <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50 flex flex-wrap gap-2 justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Top 5 Stok Kritis (Mendesak)</h3>
+            <span class="px-2.5 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full">Real-time Warning</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -61,13 +61,14 @@
                     </tr>
                     {% endif %}
                     {% for item in critical_items %}
+                    {% set clean_stock = ('%.2f'|format((item.current_stock or 0)|float)).rstrip('0').rstrip('.') %}
                     <tr class="hover:bg-slate-50/80 transition">
-                        <td class="p-4 font-bold text-slate-800">{{ item.item_name }}</td>
-                        <td class="p-4 font-mono text-xs text-indigo-600 font-bold">{{ item.item_code }}</td>
-                        <td class="p-4 text-center text-slate-500">{{ item.reorder_point }} {{ item.unit }}</td>
-                        <td class="p-4 text-center text-rose-600 font-extrabold">{{ item.current_stock }} {{ item.unit }}</td>
-                        <td class="p-4 text-center">
-                            <span class="px-2.5 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full animate-pulse">Butuh Beli</span>
+                        <td class="p-4 font-bold text-slate-800 whitespace-nowrap">{{ item.item_name }}</td>
+                        <td class="p-4 font-mono text-xs text-indigo-600 font-bold whitespace-nowrap">{{ item.item_code }}</td>
+                        <td class="p-4 text-center text-slate-500 whitespace-nowrap">{{ item.reorder_point }} {{ item.unit }}</td>
+                        <td class="p-4 text-center text-rose-600 font-extrabold whitespace-nowrap">{{ clean_stock }} {{ item.unit }}</td>
+                        <td class="p-4 text-center whitespace-nowrap">
+                            <span class="px-2.5 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full">Butuh Beli</span>
                         </td>
                     </tr>
                     {% endfor %}

@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Inventory System | Bonbonbites{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
 
-    <!-- FLash Message Notification -->
-    <div class="fixed top-4 right-4 z-50 max-w-sm space-y-2">
+    <!-- Flash Message Notification -->
+    <div class="fixed top-4 right-4 z-50 max-w-sm w-[calc(100%-2rem)] sm:w-auto space-y-2">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    {% set bg_color = 'bg-blue-500' %}
-                    {% if category == 'success' %}{% set bg_color = 'bg-emerald-500' %}
-                    {% elif category == 'danger' %}{% set bg_color = 'bg-rose-500' %}
+                    {% set bg_color = 'bg-blue-600' %}
+                    {% if category == 'success' %}{% set bg_color = 'bg-emerald-600' %}
+                    {% elif category == 'danger' %}{% set bg_color = 'bg-rose-600' %}
                     {% elif category == 'warning' %}{% set bg_color = 'bg-amber-500' %}{% endif %}
                     <div class="{{ bg_color }} text-white px-4 py-3 rounded-lg shadow-lg flex items-center justify-between space-x-4 transition-all duration-300">
                         <span class="text-sm font-medium">{{ message }}</span>
@@ -26,71 +26,85 @@
         {% endwith %}
     </div>
 
+    {% if current_user.is_authenticated %}
+    <!-- Backdrop Overlay untuk Mobile Drawer -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-30 hidden lg:hidden transition-opacity"></div>
+    {% endif %}
+
     <div class="flex flex-1 min-h-screen">
-        
-        <!-- SIDEBAR -->
         {% if current_user.is_authenticated %}
-        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl min-h-screen">
-            <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
-                <span class="text-2xl">🍰</span>
-                <div>
-                    <h2 class="font-bold text-white text-base leading-tight">Bonbonbites</h2>
-                    <span class="text-xs text-slate-500">Inventory Monitoring</span>
+        <!-- SIDEBAR (Slide-over di Mobile/Tablet, Sticky Full-Height di Desktop) -->
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl transform -translate-x-full transition-transform duration-200 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0">
+            <!-- Brand Header -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">🍰</span>
+                    <div>
+                        <h2 class="font-bold text-white text-base leading-tight">Bonbonbites</h2>
+                        <span class="text-xs text-slate-400">Inventory Monitoring</span>
+                    </div>
                 </div>
+                <button type="button" onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
             <!-- Identitas User & Role -->
-            <div class="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-                <div class="flex flex-col">
-                    <span class="text-xs text-slate-400">Login sebagai:</span>
-                    <span class="text-sm font-semibold text-slate-200">{{ current_user.username }}</span>
+            <div class="p-4 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex flex-col min-w-0 pr-2">
+                    <span class="text-[11px] text-slate-400">Login sebagai:</span>
+                    <span class="text-sm font-semibold text-slate-100 truncate">{{ current_user.username }}</span>
                 </div>
-                <span class="px-2 py-0.5 bg-indigo-900 text-indigo-200 text-[10px] rounded font-bold uppercase tracking-wider">
+                <span class="px-2 py-0.5 bg-indigo-900/90 text-indigo-200 border border-indigo-700/50 text-[10px] rounded font-bold uppercase tracking-wider shrink-0">
                     {{ current_user.role }}
                 </span>
             </div>
 
-            <nav class="flex-1 p-4 space-y-1">
-                <!-- TAMPIL UNTUK SEMUA ROLE (Admin, Manager, Staff) -->
-                <a href="{{ url_for('dashboard.index') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+            <!-- Menu Navigasi -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                {% set ep = request.endpoint or '' %}
+
+                <a href="{{ url_for('dashboard.index') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'dashboard.index' else 'hover:bg-slate-800 hover:text-white' }}">
                     <span class="text-lg">📊</span>
                     <span class="text-sm font-medium">Dashboard</span>
                 </a>
                 
-                <a href="{{ url_for('snapshot.opname') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+                <a href="{{ url_for('snapshot.opname') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'snapshot.opname' else 'hover:bg-slate-800 hover:text-white' }}">
                     <span class="text-lg">📋</span>
                     <span class="text-sm font-medium">Input Stock Opname</span>
                 </a>
 
-                <a href="{{ url_for('snapshot.history') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+                <a href="{{ url_for('snapshot.history') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'snapshot.history' else 'hover:bg-slate-800 hover:text-white' }}">
                     <span class="text-lg">🕰️</span>
                     <span class="text-sm font-medium">Riwayat Opname</span>
                 </a>
 
-                <!-- TAMPIL HANYA UNTUK ADMIN & MANAGER -->
                 {% if current_user.role|lower in ['admin', 'manager'] %}
-                <a href="{{ url_for('inventory.list_items') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+                <div class="pt-3 pb-1 px-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Master Data</div>
+                <a href="{{ url_for('inventory.list_items') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'inventory.list_items' else 'hover:bg-slate-800 hover:text-white' }}">
                     <span class="text-lg">📦</span>
                     <span class="text-sm font-medium">Katalog Master Item</span>
                 </a>
                 
-                <a href="{{ url_for('inventory.settings') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition group">
+                <a href="{{ url_for('inventory.settings') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'inventory.settings' else 'hover:bg-slate-800 hover:text-white' }}">
                     <span class="text-lg">🏷️</span>
                     <span class="text-sm font-medium">Data Pendukung</span>
                 </a>
                 {% endif %}
             </nav>
 
-            <div class="p-4 border-t border-slate-800 bg-slate-950 space-y-2">
-                <!-- TAMPIL EKSKLUSIF HANYA UNTUK ADMIN -->
+            <!-- Footer Sidebar (Pengaturan Akun & Logout) -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/80 space-y-2.5">
                 {% if current_user.role|lower == 'admin' %}
-                <a href="{{ url_for('auth.manage_users') }}" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition group mb-4 border border-slate-700">
+                <a href="{{ url_for('auth.manage_users') }}" class="flex items-center space-x-3 px-4 py-2 rounded-lg transition border {{ 'bg-indigo-600 border-indigo-500 text-white' if ep == 'auth.manage_users' else 'border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300' }}">
                     <span class="text-lg">⚙️</span>
-                    <span class="text-sm font-medium text-slate-300">Kelola Pengguna</span>
+                    <span class="text-sm font-medium">Kelola Pengguna</span>
                 </a>
                 {% endif %}
 
-                <a href="{{ url_for('auth.logout') }}" class="flex items-center justify-center space-x-2 w-full py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-lg shadow transition">
+                <a href="{{ url_for('auth.logout') }}" class="flex items-center justify-center space-x-2 w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow transition">
                     <span>🚪</span>
                     <span>Keluar Sistem</span>
                 </a>
@@ -98,20 +112,54 @@
         </aside>
         {% endif %}
 
-        <!-- KONTEN UTAMA -->
-        <div class="flex-1 flex flex-col {% if not current_user.is_authenticated %}bg-slate-100 items-center justify-center p-4{% else %}bg-slate-50{% endif %}">
-                    
-            <main class="{% if current_user.is_authenticated %}p-6 flex-grow{% else %}w-full max-w-md{% endif %}">
+        <!-- KOLOM KANAN: TOPBAR MOBILE + KONTEN UTAMA + FOOTER -->
+        <div class="flex-1 flex flex-col min-w-0 {% if not current_user.is_authenticated %}bg-slate-100 items-center justify-center p-4{% else %}bg-slate-50{% endif %}">
+            {% if current_user.is_authenticated %}
+            <!-- Topbar Khusus Layar HP / Tablet -->
+            <header class="lg:hidden sticky top-0 z-20 w-full bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow-md">
+                <div class="flex items-center space-x-2.5">
+                    <button type="button" onclick="toggleSidebar()" aria-label="Buka Menu" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <span class="text-lg">🍰</span>
+                    <span class="font-bold text-sm tracking-tight">Bonbonbites</span>
+                </div>
+                <span class="px-2 py-0.5 bg-indigo-900 text-indigo-200 text-[10px] rounded font-bold uppercase">
+                    {{ current_user.role }}
+                </span>
+            </header>
+            {% endif %}
+
+            <main class="{% if current_user.is_authenticated %}p-4 sm:p-6 lg:p-8 flex-1{% else %}w-full max-w-md my-auto{% endif %}">
                 {% block content %}{% endblock %}
             </main>
-        </div>
 
+            {% if current_user.is_authenticated %}
+            <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-400">
+                &copy; 2026 Bonbonbites Inventory System. All Rights Reserved.
+            </footer>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- FOOTER -->
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 z-10">
+    {% if not current_user.is_authenticated %}
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
         &copy; 2026 Bonbonbites Inventory System. All Rights Reserved.
     </footer>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('app-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+    </script>
+    {% endif %}
 
 </body>
 </html>

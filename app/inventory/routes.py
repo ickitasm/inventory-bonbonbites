@@ -1,10 +1,10 @@
+from decimal import Decimal, InvalidOperation
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app import db
 from app.inventory import inventory_bp
 from app.models import MasterItem, Category, StorageLocation, Supplier, ActivityLog, ItemSupplierPrice
 from datetime import datetime
-from app.auth.routes import roles_required
 from app.utils import roles_required
 
 UNITS = ['GRAM', 'KG', 'PCS', 'PACK', 'KARTON', 'LITER', 'ML']
@@ -44,8 +44,6 @@ def create_item():
     item_name = request.form.get('name').strip()
     cat_raw = request.form.get('category_id')
     loc_raw = request.form.get('location_id')
-    
-    # 1. TANGKAP LIST SUPPLIER (Gunakan getlist, bukan get)
     supplier_ids = request.form.getlist('supplier_ids')
     
     category_id = int(cat_raw) if cat_raw else None
@@ -53,6 +51,15 @@ def create_item():
     unit = request.form.get('unit')
     reorder_point = request.form.get('reorder_point', 0)
     notes = request.form.get('notes', '').strip()
+
+    # Konversi stok awal desimal (mendukung titik maupun koma)
+    raw_initial_stock = request.form.get('current_stock', '0').strip().replace(',', '.')
+    try:
+        initial_stock = round(Decimal(raw_initial_stock), 2) if raw_initial_stock else Decimal('0')
+        if initial_stock < 0:
+            initial_stock = Decimal('0')
+    except (InvalidOperation, ValueError):
+        initial_stock = Decimal('0')
 
     existing_item = MasterItem.query.filter_by(item_name=item_name, deleted_at=None).first()
     if existing_item:
@@ -68,47 +75,40 @@ def create_item():
     item_count = MasterItem.query.count() + 1
     item_code = f"{prefix}-{item_count:04d}"
 
-    # 2. SIMPAN MASTER ITEM (Kosongkan dulu default_supplier_id)
     new_item = MasterItem(
         item_code=item_code,
         item_name=item_name,
         category_id=category_id,
         storage_location_id=location_id,
-        default_supplier_id=None, # Akan diisi setelah loop supplier
+        default_supplier_id=None,
         unit=unit,
         reorder_point=int(reorder_point) if reorder_point else 0,
-        current_stock=0, 
+        current_stock=initial_stock, 
         notes=notes
     )
     db.session.add(new_item)
-    db.session.flush() # Dapatkan ID new_item sebelum di-commit
+    db.session.flush()
 
-    # 3. LOOPING UNTUK MENYIMPAN BANYAK SUPPLIER
     if supplier_ids:
         for index, sup_id in enumerate(supplier_ids):
-            # Anggap supplier urutan pertama yang dipilih sebagai 'default'
             is_default = True if index == 0 else False
-            
-            # Simpan ke tabel relasi harga
             new_price = ItemSupplierPrice(
                 item_id=new_item.id,
                 supplier_id=int(sup_id),
-                purchase_price=0, # Nilai awal 0, bisa di-edit di fitur lain nanti
+                purchase_price=0,
                 is_default=is_default
             )
             db.session.add(new_price)
             
-            # Set default_supplier_id di tabel MasterItem
             if is_default:
                 new_item.default_supplier_id = int(sup_id)
 
-    # 4. LOG AKTIVITAS DAN COMMIT
     log_activity('CREATE', 'MASTER_ITEM', new_item.id, f"Menambahkan item baru: {item_code} - {item_name}")
     db.session.commit()
     
     flash(f"Barang {item_name} ({item_code}) berhasil didaftarkan dengan {len(supplier_ids)} supplier!", "success")
     return redirect(url_for('inventory.list_items'))
-pass
+
 
 @inventory_bp.route('/items/update/<int:id>', methods=['POST'])
 @login_required
@@ -135,11 +135,9 @@ def update_item(id):
     item.notes = request.form.get('notes', '').strip()
     supplier_ids = request.form.getlist('supplier_ids')
     
-    # Hapus semua relasi harga supplier yang lama untuk item ini
     ItemSupplierPrice.query.filter_by(item_id=item.id).delete()
-    item.default_supplier_id = None # Reset default
+    item.default_supplier_id = None
 
-    # Masukkan relasi supplier yang baru (sama seperti logika create)
     if supplier_ids:
         for index, sup_id in enumerate(supplier_ids):
             is_default = True if index == 0 else False
@@ -158,7 +156,7 @@ def update_item(id):
     db.session.commit()
     flash(f"Data barang {item.item_code} berhasil diperbarui!", "success")
     return redirect(url_for('inventory.list_items'))
-pass
+
 
 @inventory_bp.route('/items/delete/<int:id>', methods=['POST'])
 @login_required
@@ -170,7 +168,7 @@ def delete_item(id):
     db.session.commit()
     flash(f"Barang {item.item_name} berhasil dihapus dari sistem!", "warning")
     return redirect(url_for('inventory.list_items'))
-pass
+
 
 @inventory_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -179,7 +177,6 @@ def settings():
     if request.method == 'POST':
         action = request.form.get('action')
         
-        # --- TAMBAH DATA ---
         if action == 'add_category':
             name = request.form.get('name').strip().upper()
             if name and not Category.query.filter_by(category_name=name).first():
@@ -208,7 +205,6 @@ def settings():
                 log_activity('CREATE', 'SUPPLIER', new_sup.id, f"Supplier baru: {name}")
                 flash(f'Supplier {name} ditambahkan.', 'success')
 
-        # --- HAPUS DATA (SOFT DISABLE) ---
         elif action == 'delete_category':
             id = request.form.get('id')
             cat = Category.query.get(id)
@@ -233,7 +229,6 @@ def settings():
                 log_activity('DISABLE', 'SUPPLIER', id, f"Menonaktifkan supplier: {sup.supplier_name}")
                 flash(f'Supplier {sup.supplier_name} berhasil dinonaktifkan.', 'warning')
 
-        # --- AKTIFKAN KEMBALI (RESTORE) ---
         elif action == 'restore_category':
             id = request.form.get('id')
             cat = Category.query.get(id)
@@ -261,7 +256,6 @@ def settings():
         db.session.commit()
         return redirect(url_for('inventory.settings'))
 
-    # Ubah menjadi .all() agar data yang Nonaktif tetap muncul di layar Settings
     categories = Category.query.all()
     locations = StorageLocation.query.all()
     suppliers = Supplier.query.all()
@@ -272,4 +266,3 @@ def settings():
         locations=locations, 
         suppliers=suppliers
     )
-pass

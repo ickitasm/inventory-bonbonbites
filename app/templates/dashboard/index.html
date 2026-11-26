@@ -7,19 +7,19 @@
     <!-- Header Dashboard -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Ringkasan Sistem</h1>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Selamat datang kembali, <span class="font-semibold text-slate-700 dark:text-slate-200">{{ current_user.full_name or current_user.username }}</span>
-                <span class="inline-block ml-1 px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{{ current_user.role }}</span>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-warm-ink dark:text-white tracking-tight">Ringkasan Sistem</h1>
+            <p class="text-xs sm:text-sm text-warm-muted dark:text-mono-muted mt-0.5">
+                Selamat datang kembali, <span class="font-semibold text-warm-ink dark:text-neutral-200">{{ current_user.full_name or current_user.username }}</span>
+                <span class="inline-block ml-1 px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-warm-subtle dark:bg-mono-subtle text-stone-600 dark:text-neutral-300 border border-warm-border dark:border-mono-border">{{ current_user.role }}</span>
             </p>
         </div>
         <div class="flex items-center gap-2.5">
             {% if current_user.role|lower in ['admin', 'manager'] %}
-            <a href="{{ url_for('inventory.list_items') }}" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-xs">
+            <a href="{{ url_for('inventory.list_items') }}" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-warm-card dark:bg-mono-card border border-warm-border dark:border-mono-border text-warm-ink dark:text-mono-ink hover:bg-warm-subtle dark:hover:bg-mono-subtle transition">
                 Kelola Katalog
             </a>
             {% endif %}
-            <a href="{{ url_for('snapshot.opname') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-600/20 transition">
+            <a href="{{ url_for('snapshot.opname') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-stone-800 hover:bg-stone-900 text-stone-50 dark:bg-neutral-200 dark:hover:bg-white dark:text-neutral-900 shadow-xs transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -30,40 +30,40 @@
 
     <!-- Kartu Statistik KPI -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <div class="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200/90 dark:border-slate-800 border-t-4 border-t-indigo-500 flex justify-between items-center transition">
+        <div class="bg-warm-card dark:bg-mono-card p-5 sm:p-6 rounded-2xl border border-warm-border dark:border-mono-border flex justify-between items-center transition">
             <div>
-                <p class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Katalog Item Aktif</p>
-                <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1.5">{{ total_items }}</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">SKU Terdaftar di Sistem</p>
+                <p class="text-[11px] font-bold text-warm-muted dark:text-mono-muted uppercase tracking-wider">Katalog Item Aktif</p>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-warm-ink dark:text-white mt-1.5">{{ total_items }}</h3>
+                <p class="text-xs text-warm-muted dark:text-mono-muted mt-1">SKU Terdaftar di Sistem</p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <div class="w-12 h-12 rounded-2xl bg-warm-subtle dark:bg-mono-subtle text-stone-700 dark:text-neutral-300 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200/90 dark:border-slate-800 border-t-4 border-t-rose-500 flex justify-between items-center transition">
+        <div class="bg-warm-card dark:bg-mono-card p-5 sm:p-6 rounded-2xl border border-warm-border dark:border-mono-border flex justify-between items-center transition">
             <div>
-                <p class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Peringatan Stok Rendah</p>
-                <h3 class="text-2xl sm:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1.5">{{ low_stock_count }}</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Item Butuh Restock Segera</p>
+                <p class="text-[11px] font-bold text-warm-muted dark:text-mono-muted uppercase tracking-wider">Peringatan Stok Rendah</p>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-amber-700 dark:text-amber-400 mt-1.5">{{ low_stock_count }}</h3>
+                <p class="text-xs text-warm-muted dark:text-mono-muted mt-1">Item Butuh Restock Segera</p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200/90 dark:border-slate-800 border-t-4 border-t-emerald-500 flex justify-between items-center transition">
+        <div class="bg-warm-card dark:bg-mono-card p-5 sm:p-6 rounded-2xl border border-warm-border dark:border-mono-border flex justify-between items-center transition">
             <div>
-                <p class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Sesi Opname</p>
-                <h3 class="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1.5">{{ total_sessions }}</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Aktivitas Audit Fisik Terbuku</p>
+                <p class="text-[11px] font-bold text-warm-muted dark:text-mono-muted uppercase tracking-wider">Total Sesi Opname</p>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-warm-ink dark:text-white mt-1.5">{{ total_sessions }}</h3>
+                <p class="text-xs text-warm-muted dark:text-mono-muted mt-1">Aktivitas Audit Fisik Terbuku</p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <div class="w-12 h-12 rounded-2xl bg-warm-subtle dark:bg-mono-subtle text-stone-700 dark:text-neutral-300 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
@@ -71,20 +71,20 @@
     </div>
 
     <!-- Tabel Top 5 Stok Kritis -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-slate-200/90 dark:border-slate-800 overflow-hidden transition">
-        <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 flex flex-wrap gap-2 justify-between items-center">
+    <div class="bg-warm-card dark:bg-mono-card rounded-2xl border border-warm-border dark:border-mono-border overflow-hidden transition">
+        <div class="p-4 sm:p-5 border-b border-warm-border dark:border-mono-border bg-warm-subtle/60 dark:bg-mono-subtle/60 flex flex-wrap gap-2 justify-between items-center">
             <div>
-                <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Top 5 Stok Kritis (Mendesak)</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Item dengan kuantitas fisik menyentuh atau di bawah Reorder Point (ROP)</p>
+                <h3 class="font-bold text-warm-ink dark:text-white text-sm sm:text-base">Top 5 Stok Kritis (Mendesak)</h3>
+                <p class="text-xs text-warm-muted dark:text-mono-muted">Item dengan kuantitas fisik menyentuh atau di bawah Reorder Point (ROP)</p>
             </div>
-            <span class="px-2.5 py-1 bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-500/30 text-xs font-bold rounded-full">
+            <span class="px-2.5 py-1 bg-warm-card dark:bg-mono-card text-stone-700 dark:text-neutral-300 border border-warm-border dark:border-mono-border text-xs font-semibold rounded-full">
                 Real-time Monitoring
             </span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="text-slate-400 dark:text-slate-500 text-[11px] uppercase font-bold tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
+                    <tr class="text-warm-muted dark:text-mono-muted text-[11px] uppercase font-bold tracking-wider border-b border-warm-border dark:border-mono-border bg-warm-subtle/30 dark:bg-mono-bg/40">
                         <th class="p-4">Nama Barang</th>
                         <th class="p-4">Kode SKU</th>
                         <th class="p-4 text-center">Batas Aman (ROP)</th>
@@ -92,11 +92,11 @@
                         <th class="p-4 text-center">Status</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                <tbody class="text-sm divide-y divide-warm-border/70 dark:divide-mono-border font-medium text-warm-ink dark:text-neutral-300">
                     {% if not critical_items %}
                     <tr>
                         <td colspan="5" class="p-10 text-center">
-                            <div class="inline-flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
+                            <div class="inline-flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 font-semibold">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -107,13 +107,13 @@
                     {% endif %}
                     {% for item in critical_items %}
                     {% set clean_stock = ('%.2f'|format((item.current_stock or 0)|float)).rstrip('0').rstrip('.') %}
-                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                        <td class="p-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">{{ item.item_name }}</td>
-                        <td class="p-4 font-mono text-xs text-indigo-600 dark:text-indigo-400 font-bold whitespace-nowrap">{{ item.item_code }}</td>
-                        <td class="p-4 text-center text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ item.reorder_point }} {{ item.unit }}</td>
-                        <td class="p-4 text-center text-rose-600 dark:text-rose-400 font-extrabold whitespace-nowrap">{{ clean_stock }} {{ item.unit }}</td>
+                    <tr class="hover:bg-warm-subtle/50 dark:hover:bg-mono-subtle/50 transition">
+                        <td class="p-4 font-bold text-warm-ink dark:text-white whitespace-nowrap">{{ item.item_name }}</td>
+                        <td class="p-4 font-mono text-xs text-stone-600 dark:text-neutral-400 font-semibold whitespace-nowrap">{{ item.item_code }}</td>
+                        <td class="p-4 text-center text-warm-muted dark:text-mono-muted whitespace-nowrap">{{ item.reorder_point }} {{ item.unit }}</td>
+                        <td class="p-4 text-center text-amber-700 dark:text-amber-400 font-extrabold whitespace-nowrap">{{ clean_stock }} {{ item.unit }}</td>
                         <td class="p-4 text-center whitespace-nowrap">
-                            <span class="px-2.5 py-1 bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 text-xs font-bold rounded-full">
+                            <span class="px-2.5 py-1 bg-amber-100/80 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 text-xs font-bold rounded-full">
                                 Perlu Restock
                             </span>
                         </td>

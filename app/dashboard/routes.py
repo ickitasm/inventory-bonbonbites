@@ -26,31 +26,4 @@ def index():
         MasterItem.current_stock <= MasterItem.reorder_point
     ).order_by(MasterItem.current_stock.asc()).limit(5).all()
 
-    # 3. Hitung kapasitas riil database PostgreSQL (Supabase Free Tier = 500 MB)
-    db_used_mb = 0.0
-    db_limit_mb = 500.0
-    db_percent = 0.0
-    db_supported = False
-
-    try:
-        size_bytes = db.session.execute(
-            text("SELECT pg_database_size(current_database())")
-        ).scalar()
-        if size_bytes is not None:
-            db_used_mb = round(size_bytes / (1024 * 1024), 2)
-            db_percent = round((db_used_mb / db_limit_mb) * 100, 2)
-            db_supported = True
-    except Exception:
-        db.session.rollback()
-
-    return render_template(
-        'dashboard/index.html',
-        total_items=total_items,
-        low_stock_count=low_stock_count,
-        total_sessions=total_sessions,
-        critical_items=critical_items,
-        db_used_mb=db_used_mb,
-        db_limit_mb=int(db_limit_mb),
-        db_percent=db_percent,
-        db_supported=db_supported
-    )
+    
